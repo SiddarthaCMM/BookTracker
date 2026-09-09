@@ -1,81 +1,475 @@
-Sistema de Login y CRUD de Usuarios (Ionic + PHP)
-Aplicación móvil/híbrida desarrollada con Ionic Angular que implementa un sistema de autenticación de usuarios y un CRUD completo. El backend está construido con PHP puro (PDO) y MySQL (corriendo sobre XAMPP), implementando seguridad mediante hashes y Tokens de autenticación (Bearer Token).
+# 📱 Sistema de Login y CRUD de Usuarios
 
-🛠️ Tech Stack (Tecnologías Utilizadas)
-Frontend (App Móvil/Web):
+Aplicación móvil/híbrida desarrollada con **Ionic Angular** que implementa un sistema de autenticación de usuarios y un CRUD completo.
 
-Ionic (Componentes Standalone)
-Angular (Enrutamiento moderno y Guards)
-Axios (Cliente HTTP para peticiones a la API)
-Ionicons (Íconos)
-Backend (API):
+El backend está desarrollado en **PHP puro utilizando PDO**, con **MySQL** como base de datos mediante **XAMPP**. El sistema utiliza hashing de contraseñas y tokens de autenticación mediante **Bearer Token** para proteger los endpoints del CRUD.
 
-PHP puro (Sin frameworks)
-PDO (PHP Data Objects) para conexión segura a MySQL
-MySQL (Base de datos relacional administrada con XAMPP/phpMyAdmin)
-✨ Características Principales
-Pantalla de Login: Autenticación de usuarios con validación de credenciales en el backend.
-Route Guards (Safeguard): Protección de rutas en Angular. Si un usuario intenta acceder a los Tabs sin iniciar sesión, es redirigido automáticamente al Login.
-CRUD Completo: Vista de administración con una tabla moderna para visualizar usuarios y un Modal para Crear/Editar registros.
-Seguridad de Contraseñas: Las contraseñas se guardan en la base de datos utilizando password_hash de PHP (BCRYPT).
-Protección de API por Tokens: Implementación de un middleware en PHP que exige un Token válido para poder consumir los endpoints del CRUD. Evita que alguien use la API sin haber iniciado sesión.
-Interceptores con Axios: Todas las peticiones HTTP envían automáticamente el Token de autenticación en los headers.
-📋 Requisitos Previos
-Antes de clonar y ejecutar este proyecto, asegúrate de tener instalado:
+---
 
-Node.js (LTS recomendado)
-Ionic CLI (npm install -g @ionic/cli)
-XAMPP (Para correr Apache y MySQL localmente)
-🚀 Instalación y Puesta en Marcha
-Sigue estos pasos para levantar tanto el backend como el frontend en tu máquina local.
+## 🛠️ Tech Stack
 
-1. Configuración del Backend (PHP + MySQL)
-Inicia los módulos de Apache y MySQL desde el panel de control de XAMPP.
-Crea una carpeta llamada api dentro de C:\xampp\htdocs\ (o la ruta donde tengas instalado XAMPP).
-Guarda dentro de esa carpeta los siguientes archivos PHP:
-login.php (Maneja la autenticación y genera el token)
-usuarios_api.php (Contiene la lógica del CRUD y el middleware de validación)
-Abre tu navegador y entra a http://localhost/phpmyadmin.
-Crea una nueva base de datos llamada login_db.
-Ve a la pestaña SQL y ejecuta la siguiente consulta para crear la tabla e insertar un usuario de prueba:
-CREATE TABLE `users` (  `id` int(11) NOT NULL,  `email` varchar(100) NOT NULL,  `password` varchar(255) NOT NULL,  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),  `token` varchar(255) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;ALTER TABLE `users`  ADD PRIMARY KEY (`id`),  ADD UNIQUE KEY `email` (`email`);ALTER TABLE `users`  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;-- Usuario de prueba (Email: admin@test.com | Contraseña: 123456)INSERT INTO `users` (`id`, `email`, `password`, `created_at`) VALUES(1, 'admin@test.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2026-09-01 00:00:00');
-2. Configuración del Frontend (Ionic)
-Clona este repositorio en tu máquina local.
-Abre una terminal en la raíz del proyecto e instala las dependencias de Node:
-bash
+### Frontend
 
+* **Ionic** — Componentes para aplicaciones móviles y web
+* **Angular** — Framework frontend, routing y route guards
+* **Axios** — Cliente HTTP para consumir la API
+* **Ionicons** — Biblioteca de iconos
+
+### Backend
+
+* **PHP** — API REST sin frameworks
+* **PDO** — Conexión segura entre PHP y MySQL
+* **MySQL** — Base de datos relacional
+* **XAMPP** — Entorno local para Apache y MySQL
+* **phpMyAdmin** — Administración de la base de datos
+
+---
+
+## ✨ Características
+
+### 🔐 Autenticación
+
+* Login mediante correo electrónico y contraseña.
+* Validación de credenciales mediante la API.
+* Contraseñas almacenadas utilizando `password_hash()` de PHP.
+* Verificación mediante `password_verify()`.
+* Generación de tokens de autenticación.
+* Uso de `Bearer Token` para proteger los endpoints.
+
+### 🛡️ Protección de rutas
+
+* Implementación de un **Route Guard** en Angular.
+* Las rutas protegidas requieren una sesión válida.
+* Los usuarios no autenticados son redirigidos automáticamente al Login.
+* El token de sesión se almacena en `localStorage`.
+
+### 👥 CRUD de usuarios
+
+El sistema permite:
+
+* Consultar usuarios.
+* Crear nuevos usuarios.
+* Editar usuarios existentes.
+* Eliminar usuarios.
+* Visualizar los registros mediante una tabla.
+* Crear y editar usuarios mediante un modal.
+
+### 🌐 Comunicación con la API
+
+Axios se utiliza para realizar las peticiones HTTP entre Ionic y PHP.
+
+Las peticiones protegidas incluyen automáticamente el token en el header:
+
+```http
+Authorization: Bearer <token>
+```
+
+Los endpoints del CRUD utilizan los métodos:
+
+* `GET`
+* `POST`
+* `PATCH`
+* `DELETE`
+
+---
+
+## 📋 Requisitos previos
+
+Antes de ejecutar el proyecto, asegúrate de tener instalado:
+
+* [Node.js](https://nodejs.org/) — Se recomienda la versión LTS.
+* [Ionic CLI](https://ionicframework.com/docs/cli)
+* [XAMPP](https://www.apachefriends.org/) — Para Apache y MySQL.
+* Un navegador web moderno.
+
+Para instalar Ionic CLI:
+
+```bash
+npm install -g @ionic/cli
+```
+
+---
+
+# 🚀 Instalación
+
+## 1. Configurar el Backend
+
+### Paso 1 — Iniciar XAMPP
+
+Abre XAMPP e inicia los módulos:
+
+* **Apache**
+* **MySQL**
+
+### Paso 2 — Crear la carpeta de la API
+
+Dentro de la instalación de XAMPP, crea la siguiente carpeta:
+
+```text
+C:\xampp\htdocs\api
+```
+
+Coloca dentro de esta carpeta los archivos PHP del backend:
+
+```text
+api/
+├── login.php
+└── usuarios_api.php
+```
+
+### Paso 3 — Crear la base de datos
+
+Abre phpMyAdmin:
+
+```text
+http://localhost/phpmyadmin
+```
+
+Crea una base de datos llamada:
+
+```text
+login_db
+```
+
+Después, ejecuta el siguiente script SQL:
+
+```sql
+CREATE TABLE `users` (
+    `id` int(11) NOT NULL,
+    `email` varchar(100) NOT NULL,
+    `password` varchar(255) NOT NULL,
+    `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+    `token` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `users`
+    ADD PRIMARY KEY (`id`),
+    ADD UNIQUE KEY `email` (`email`);
+
+ALTER TABLE `users`
+    MODIFY `id` int(11) NOT NULL AUTO_INCREMENT,
+    AUTO_INCREMENT=1;
+
+INSERT INTO `users`
+    (`id`, `email`, `password`, `created_at`)
+VALUES
+    (
+        1,
+        'admin@test.com',
+        '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        '2026-09-01 00:00:00'
+    );
+```
+
+---
+
+# 2. Configurar el Frontend
+
+### Paso 1 — Clonar el repositorio
+
+Clona el proyecto:
+
+```bash
+git clone <repository-url>
+```
+
+Entra a la carpeta del proyecto:
+
+```bash
+cd <project-folder>
+```
+
+### Paso 2 — Instalar dependencias
+
+Ejecuta:
+
+```bash
 npm install
-Instala Axios (necesario para las peticiones HTTP):
-bash
+```
 
+Después instala Axios:
+
+```bash
 npm install axios
-Verifica que en los archivos TypeScript (tab1.page.ts y login.page.ts), la URL de la API apunte a http://127.0.0.1/api/... (evita usar localhost para prevenir bloqueos de CORS o problemas con IPv6).
-Levanta el servidor de desarrollo de Ionic:
-bash
+```
 
+### Paso 3 — Configurar la URL de la API
+
+Verifica los archivos:
+
+```text
+src/app/login/
+src/app/tab1/
+```
+
+y asegúrate de que las peticiones apunten al backend local:
+
+```text
+http://127.0.0.1/api/
+```
+
+Por ejemplo:
+
+```typescript
+http://127.0.0.1/api/login.php
+```
+
+Se recomienda utilizar `127.0.0.1` en lugar de `localhost` para evitar posibles problemas relacionados con IPv6 o la configuración local del servidor.
+
+### Paso 4 — Ejecutar Ionic
+
+Inicia el servidor de desarrollo:
+
+```bash
 ionic serve
-🔑 Credenciales de Prueba
-Para probar el sistema de login, utiliza las siguientes credenciales:
+```
 
-Correo: admin@test.com
-Contraseña: 123456
-📂 Estructura del Proyecto
-text
+La aplicación estará disponible en la dirección que indique Ionic, normalmente:
 
+```text
+http://localhost:8100
+```
+
+---
+
+# 🔑 Credenciales de prueba
+
+Utiliza las siguientes credenciales para probar el sistema:
+
+| Campo      | Valor            |
+| ---------- | ---------------- |
+| Correo     | `admin@test.com` |
+| Contraseña | `123456`         |
+
+---
+
+# 📂 Estructura del proyecto
+
+```text
+project/
+│
 ├── src/
-│   ├── app/
-│   │   ├── login/              # Vista y lógica del Login
-│   │   ├── tabs/               # Contenedor de pestañas (Incluye botón de Logout)
-│   │   ├── tab1/               # Vista principal: CRUD de Usuarios (Tabla y Modal)
-│   │   ├── tab2/               # Vista secundaria vacía
-│   │   ├── tab3/               # Vista secundaria vacía
-│   │   ├── auth.guard.ts       # Guardia de ruta para proteger /tabs/*
-│   │   └── main.ts             # Configuración de provideHttpClient y enrutamiento
-├── htdocs/api/ (XAMPP)
-│   ├── login.php               # Endpoint de autenticación
-│   ├── usuarios_api.php        # CRUD de usuarios con middleware de token
-🔒 Seguridad Implementada
-Hashing de Contraseñas: Uso de password_hash y password_verify en PHP. Las contraseñas originales son irreversibles.
-Tokens de Sesión: Al iniciar sesión, el backend genera un token aleatorio (bin2hex(random_bytes(32))) y lo guarda en la BD. Se elimina el acceso directo a los datos del CRUD sin este token.
-Route Guards: Angular evita la navegación a rutas protegidas si el estado de sesión no está guardado en el localStorage del navegador.
-Headers de Autorización: Axios envía el token en la cabecera Authorization: Bearer <token> en cada petición GET, POST, PATCH o DELETE al CRUD.
+│   └── app/
+│       ├── login/
+│       │   ├── login.page.html
+│       │   ├── login.page.scss
+│       │   └── login.page.ts
+│       │
+│       ├── tabs/
+│       │   └── ...
+│       │
+│       ├── tab1/
+│       │   └── ...
+│       │
+│       ├── tab2/
+│       │   └── ...
+│       │
+│       ├── tab3/
+│       │   └── ...
+│       │
+│       ├── auth.guard.ts
+│       └── main.ts
+│
+├── package.json
+├── angular.json
+└── ...
+```
+
+Backend:
+
+```text
+C:\xampp\htdocs\
+│
+└── api/
+    ├── login.php
+    └── usuarios_api.php
+```
+
+---
+
+# 🔒 Seguridad
+
+El proyecto implementa diferentes mecanismos para proteger las cuentas y los endpoints de la API.
+
+### 1. Hashing de contraseñas
+
+Las contraseñas no se almacenan directamente en texto plano.
+
+PHP utiliza:
+
+```php
+password_hash()
+```
+
+para generar el hash y:
+
+```php
+password_verify()
+```
+
+para comprobar las credenciales durante el login.
+
+---
+
+### 2. Tokens de autenticación
+
+Después de iniciar sesión correctamente, el backend genera un token aleatorio utilizando:
+
+```php
+bin2hex(random_bytes(32))
+```
+
+El token se almacena en la base de datos y se utiliza para autenticar las peticiones posteriores.
+
+---
+
+### 3. Bearer Token
+
+Los endpoints protegidos requieren el siguiente header:
+
+```http
+Authorization: Bearer <token>
+```
+
+Si el token no existe o no es válido, la API rechaza la petición.
+
+---
+
+### 4. Route Guard
+
+Angular utiliza un `auth.guard.ts` para evitar que usuarios no autenticados accedan a las rutas protegidas.
+
+El flujo básico es:
+
+```text
+Login
+  │
+  ├── Credenciales incorrectas ──> Error
+  │
+  └── Credenciales correctas
+            │
+            ▼
+        Generar token
+            │
+            ▼
+       Guardar sesión
+            │
+            ▼
+      Acceso a /tabs
+```
+
+---
+
+# 🔄 Flujo de autenticación
+
+```text
+┌──────────────┐
+│    Usuario   │
+└──────┬───────┘
+       │
+       │ Email + Password
+       ▼
+┌──────────────┐
+│ Ionic Angular│
+└──────┬───────┘
+       │
+       │ POST
+       ▼
+┌──────────────┐
+│   PHP API    │
+│  login.php   │
+└──────┬───────┘
+       │
+       │ password_verify()
+       ▼
+┌──────────────┐
+│    MySQL     │
+└──────┬───────┘
+       │
+       │ Token
+       ▼
+┌──────────────┐
+│ Ionic Angular│
+└──────┬───────┘
+       │
+       │ Bearer Token
+       ▼
+┌──────────────┐
+│ usuarios_api │
+│     .php     │
+└──────────────┘
+```
+
+---
+
+# 📡 API
+
+La API cuenta principalmente con dos archivos:
+
+### `login.php`
+
+Responsable de:
+
+* Recibir las credenciales.
+* Buscar al usuario en MySQL.
+* Verificar la contraseña.
+* Generar el token.
+* Devolver la información de autenticación.
+
+### `usuarios_api.php`
+
+Responsable de:
+
+* Validar el token.
+* Consultar usuarios.
+* Crear usuarios.
+* Actualizar usuarios.
+* Eliminar usuarios.
+
+---
+
+# 🧪 Pruebas
+
+Para probar el proyecto:
+
+1. Inicia **Apache** y **MySQL** en XAMPP.
+2. Verifica que la base de datos `login_db` exista.
+3. Ejecuta el proyecto Ionic:
+
+```bash
+ionic serve
+```
+
+4. Ingresa con:
+
+```text
+Email: admin@test.com
+Password: 123456
+```
+
+5. Después del login, accede a la sección de usuarios.
+
+6. Prueba las operaciones de:
+
+   * Crear
+   * Consultar
+   * Editar
+   * Eliminar
+
+7. Finalmente, utiliza **Logout** y verifica que las rutas protegidas vuelvan a solicitar autenticación.
+
+---
+
+# 📌 Notas
+
+Este proyecto está configurado para ejecutarse en un entorno local utilizando **XAMPP** como servidor para la API PHP y **MySQL** como sistema gestor de base de datos.
+
+Para un entorno de producción se recomienda utilizar:
+
+* HTTPS.
+* Variables de entorno para las credenciales de la base de datos.
+* Expiración de tokens.
+* Revocación de tokens.
+* Configuración adecuada de CORS.
+* Validación y sanitización adicional de los datos recibidos.
+* Un sistema de gestión de sesiones o tokens más robusto.
