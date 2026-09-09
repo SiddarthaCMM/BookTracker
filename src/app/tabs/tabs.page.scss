@@ -1,1 +1,7 @@
 
+ion-tabs {
+  /* Esto le dice a los tabs que empiecen después de la barra de arriba */
+  position: relative;
+  height: calc(100% - 56px); /* 56px es la altura estándar de la toolbar */
+  contain: none;
+}

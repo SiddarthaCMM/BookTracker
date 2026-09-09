@@ -1,0 +1,83 @@
+/* Fondo para que resalte la tarjeta blanca */
+ion-content {
+  --background: #f4f5f8;
+}
+
+/* Custom font */
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+/* Basic reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Form styles */
+#msform {
+  width: 400px;
+  max-width: 90%;
+  margin: 50px auto;
+  text-align: center;
+  position: relative;
+}
+
+/* Fieldsets */
+#msform fieldset {
+  background: white;
+  border: 0 none;
+  border-radius: 3px;
+  box-shadow: 0 0 15px 1px rgba(0, 0, 0, 0.4);
+  padding: 20px 30px;
+  width: 100%;
+  position: relative;
+}
+
+/* Inputs */
+#msform input {
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: Montserrat, Arial, Verdana, sans-serif;
+  color: #2c3e50;
+  font-size: 13px;
+  background: white;
+}
+
+/* Buttons */
+#msform .action-button {
+  width: 100px;
+  background: #27ae60;
+  font-weight: bold;
+  color: white;
+  border: 0 none;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 10px;
+  margin: 10px 5px 0 5px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+#msform .action-button:hover,
+#msform .action-button:focus {
+  box-shadow: 0 0 0 2px white, 0 0 0 3px #27ae60;
+}
+
+/* Headings */
+.fs-title {
+  font-size: 15px;
+  text-transform: uppercase;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.fs-subtitle {
+  font-weight: normal;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 20px;
+}

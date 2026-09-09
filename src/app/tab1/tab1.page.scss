@@ -1,0 +1,86 @@
+/* Variables */
+ $color-principal: #455a64;
+
+ion-content {
+  --background: #f4f5f8;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  
+  h2 {
+    margin: 0;
+    color: $color-principal;
+    font-weight: 600;
+  }
+}
+
+/* Estilos de la Tabla */
+.table-container {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden; /* Para respetar el borde redondeado */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #fafbfc;
+}
+
+th {
+  text-align: left;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8898aa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e6e8eb;
+}
+
+td {
+  padding: 16px;
+  font-size: 14px;
+  color: #525f7f;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.acciones-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.empty-state {
+  text-align: center;
+  color: #8898aa;
+  padding: 30px;
+}
+
+/* Estilos del Modal */
+.modal-actions {
+  margin-top: 30px;
+  padding: 0 16px;
+}
+
+/* Responsive: Ocultar columnas menos importantes en móviles */
+@media screen and (max-width: 600px) {
+  th:nth-child(3), td:nth-child(3) {
+    display: none; /* Oculta la columna de fecha en pantallas pequeñas */
+  }
+}

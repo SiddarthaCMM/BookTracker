@@ -3,10 +3,10 @@ import { RouteReuseStrategy, provideRouter, withPreloading, PreloadAllModules } 
 import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
 
+import { provideHttpClient } from '@angular/common/http'; // <--- IMPORTANTE
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 
-// Call the element loader before the bootstrapApplication call
 defineCustomElements(window);
 
 bootstrapApplication(AppComponent, {
@@ -14,5 +14,6 @@ bootstrapApplication(AppComponent, {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    provideHttpClient(), // <--- SIN ESTO NO PUEDE CONECTARSE A PHP
   ],
 }).catch((err) => console.error(err));

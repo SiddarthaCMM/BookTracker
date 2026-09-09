@@ -1,0 +1,38 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <form id="msform" (ngSubmit)="login()">
+    <fieldset>
+      <h2 class="fs-title">Iniciar Sesión</h2>
+      <h3 class="fs-subtitle">Ingresa tus credenciales</h3>
+      <h5 class="fs-subtitle">Email: admin@test.com</h5>
+      <h5 class="fs-subtitle">Contraseña: 123456</h5>
+
+      <input
+        type="email"
+        name="email"
+        placeholder="Correo electrónico"
+        [(ngModel)]="user.email"
+        required
+      />
+
+      <input
+        type="password"
+        name="password"
+        placeholder="Contraseña"
+        [(ngModel)]="user.password"
+        required
+      />
+
+      <input
+        type="submit"
+        value="Entrar"
+        class="submit action-button"
+      />
+    </fieldset>
+  </form>
+</ion-content>
