@@ -1,33 +1,129 @@
-<ion-content class="ion-padding"></ion-content>
+<ion-content class="ion-padding">
+  
+  <div class="page-header">
+    <h2>Books Database</h2>
+    <ion-button shape="round" (click)="abrirModalCrear()">
+      <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+      Añadir Libro
+    </ion-button>
+  </div>
 
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title> Photo Gallery </ion-title>
-  </ion-toolbar>
-</ion-header>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Portada</th>
+          <th>Título / Autor</th>
+          <th>Progreso</th>
+          <th>Estado</th>
+          <th class="acciones-col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let l of libros">
+          <td>
+            <img *ngIf="l.portada_url" [src]="l.portada_url" alt="Portada" class="book-cover">
+            <ion-icon *ngIf="!l.portada_url" name="book-outline" class="placeholder-icon"></ion-icon>
+          </td>
+          <td>
+            <strong>{{ l.titulo }}</strong><br>
+            <span class="text-muted">{{ l.autor }}</span>
+          </td>
+          <td>
+            {{ l.paginas_leidas }} / {{ l.paginas_totales }} págs
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="l.paginas_totales > 0 ? (l.paginas_leidas / l.paginas_totales) * 100 : 0"></div>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="{
+              'status-reading': l.estado === 'Leyendo',
+              'status-read': l.estado === 'Leído',
+              'status-pending': l.estado === 'Pendiente'
+            }">{{ l.estado }}</span>
+          </td>
+          <td class="acciones-col">
+            <ion-button fill="clear" size="small" (click)="abrirModalEditar(l)">
+              <ion-icon slot="icon-only" name="create-outline" color="primary"></ion-icon>
+            </ion-button>
+            <ion-button fill="clear" size="small" (click)="eliminarLibro(l.id)">
+              <ion-icon slot="icon-only" name="trash-outline" color="danger"></ion-icon>
+            </ion-button>
+          </td>
+        </tr>
+        <tr *ngIf="libros.length === 0">
+          <td colspan="5" class="empty-state">Tu estantería está vacía. ¡Añade un libro!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Photo Gallery</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- Modal para Crear / Editar Libro -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="cerrarModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>{{ esNuevo ? 'Añadir Libro' : 'Actualizar Libro' }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarModal()">
+              <ion-icon slot="icon-only" name="close-circle"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        
+        <ion-item lines="full">
+          <ion-input label="Título" labelPlacement="stacked" [(ngModel)]="libroEditando.titulo"></ion-input>
+        </ion-item>
 
-  <ion-grid>
-    <ion-row>
-      @for (photo of photoService.photos(); track photo.filepath; let position = $index) {
-      <ion-col size="6">
-        <button (click)="showActionSheet(photo, position)">
-          <img [src]="photo.webviewPath" [attr.alt]="'Photo ' + (position + 1)" loading="lazy" />
-        </button>
-      </ion-col>
-      }
-    </ion-row>
-  </ion-grid>
+        <ion-item lines="full">
+          <ion-input label="Autor" labelPlacement="stacked" [(ngModel)]="libroEditando.autor"></ion-input>
+        </ion-item>
 
-  <ion-fab vertical="bottom" horizontal="center" slot="fixed">
-    <ion-fab-button (click)="addPhotoToGallery()">
-      <ion-icon name="camera"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+        <ion-item lines="full">
+          <ion-input label="ISBN (Opcional)" labelPlacement="stacked" [(ngModel)]="libroEditando.isbn"></ion-input>
+        </ion-item>
+
+        <ion-item lines="full">
+          <ion-input label="URL de Portada" labelPlacement="stacked" [(ngModel)]="libroEditando.portada_url"></ion-input>
+        </ion-item>
+
+        <ion-item lines="full">
+          <ion-input type="number" label="Páginas Totales" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_totales"></ion-input>
+        </ion-item>
+
+        <ion-item lines="full" *ngIf="!esNuevo">
+          <ion-input type="number" label="Páginas Leídas" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_leidas"></ion-input>
+        </ion-item>
+
+        <ion-item lines="full">
+          <ion-select label="Estado" labelPlacement="stacked" [(ngModel)]="libroEditando.estado">
+            <ion-select-option value="Pendiente">Pendiente</ion-select-option>
+            <ion-select-option value="Leyendo">Leyendo</ion-select-option>
+            <ion-select-option value="Leído">Leído</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item lines="full" *ngIf="!esNuevo">
+          <ion-select label="Calificación" labelPlacement="stacked" [(ngModel)]="libroEditando.calificacion">
+            <ion-select-option value="0">Sin calificar</ion-select-option>
+            <ion-select-option value="1">⭐</ion-select-option>
+            <ion-select-option value="2">⭐⭐</ion-select-option>
+            <ion-select-option value="3">⭐⭐⭐</ion-select-option>
+            <ion-select-option value="4">⭐⭐⭐⭐</ion-select-option>
+            <ion-select-option value="5">⭐⭐⭐⭐⭐</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <div class="modal-actions">
+          <ion-button expand="block" (click)="guardarLibro()">
+            {{ esNuevo ? 'Añadir a Estantería' : 'Guardar Cambios' }}
+          </ion-button>
+        </div>
+
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>

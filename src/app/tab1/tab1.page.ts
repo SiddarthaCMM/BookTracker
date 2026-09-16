@@ -2,53 +2,31 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonInput, IonItem, IonIcon, ToastController, AlertController } from '@ionic/angular';
-import axios from 'axios';
-
-// Importamos ChangeDetectorRef para forzar la actualización de la vista
 import { ChangeDetectorRef } from '@angular/core'; 
-
 import { addIcons } from 'ionicons';
 import { personAdd, createOutline, trashOutline, closeCircle } from 'ionicons/icons';
+import { UsuariosService, Usuario } from './usuarios.service'; // Importamos el servicio
 
 @Component({
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
   standalone: true,
-  imports: [
-    CommonModule, 
-    FormsModule,
-    IonContent,
-    IonButton,
-    IonModal,
-    IonHeader,
-    IonToolbar,
-    IonTitle,
-    IonButtons,
-    IonInput,
-    IonItem,
-    IonIcon
-  ],
+  imports: [CommonModule, FormsModule, IonContent, IonButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonInput, IonItem, IonIcon],
 })
 export class Tab1Page {
-  usuarios: any[] = [];
+  usuarios: Usuario[] = [];
   isModalOpen = false;
-  usuarioEditando: any = { id: '', email: '', password: '' };
+  usuarioEditando: Usuario = { id: '', email: '', password: '' };
   esNuevo = true;
-
-  private apiUrl = 'http://127.0.0.1/api/usuarios_api.php';
 
   constructor(
     private toastController: ToastController,
     private alertController: AlertController,
-    private cdr: ChangeDetectorRef // Inyectamos el detector de cambios aquí
+    private cdr: ChangeDetectorRef,
+    private usuariosService: UsuariosService // Inyectamos el servicio
   ) {
-    addIcons({ 
-      'person-add': personAdd, 
-      'create-outline': createOutline, 
-      'trash-outline': trashOutline,
-      'close-circle': closeCircle
-    });
+    addIcons({ 'person-add': personAdd, 'create-outline': createOutline, 'trash-outline': trashOutline, 'close-circle': closeCircle });
   }
 
   ionViewWillEnter() {
@@ -57,9 +35,8 @@ export class Tab1Page {
 
   async obtenerUsuarios() {
     try {
-      const res = await axios.get(this.apiUrl);
-      this.usuarios = res.data.data || [];
-      // LE DECIMOS A ANGULAR: "Oye, acabo de cambiar la variable usuarios, actualiza la pantalla"
+      // Usamos el servicio
+      this.usuarios = await this.usuariosService.obtenerUsuarios();
       this.cdr.detectChanges(); 
     } catch (error) {
       this.presentToast('Error al cargar usuarios');
@@ -72,15 +49,13 @@ export class Tab1Page {
     this.isModalOpen = true;
   }
 
-  abrirModalEditar(usuario: any) {
+  abrirModalEditar(usuario: Usuario) {
     this.esNuevo = false;
     this.usuarioEditando = { ...usuario, password: '' };
     this.isModalOpen = true;
   }
 
-  cerrarModal() {
-    this.isModalOpen = false;
-  }
+  cerrarModal() { this.isModalOpen = false; }
 
   async guardarUsuario() {
     if (!this.usuarioEditando.email || !this.usuarioEditando.password) {
@@ -90,16 +65,10 @@ export class Tab1Page {
 
     try {
       if (this.esNuevo) {
-        await axios.post(this.apiUrl, {
-          email: this.usuarioEditando.email,
-          password: this.usuarioEditando.password
-        });
+        await this.usuariosService.crearUsuario(this.usuarioEditando);
         this.presentToast('Usuario creado correctamente');
       } else {
-        await axios.patch(`${this.apiUrl}?id=${this.usuarioEditando.id}`, {
-          email: this.usuarioEditando.email,
-          password: this.usuarioEditando.password
-        });
+        await this.usuariosService.actualizarUsuario(this.usuarioEditando.id, this.usuarioEditando);
         this.presentToast('Usuario actualizado correctamente');
       }
       this.cerrarModal();
@@ -119,7 +88,7 @@ export class Tab1Page {
           text: 'Eliminar',
           handler: async () => {
             try {
-              await axios.delete(`${this.apiUrl}?id=${id}`);
+              await this.usuariosService.eliminarUsuario(id);
               this.presentToast('Usuario eliminado');
               this.obtenerUsuarios();
             } catch (error: any) {
@@ -133,11 +102,7 @@ export class Tab1Page {
   }
 
   async presentToast(message: string) {
-    const toast = await this.toastController.create({
-      message: message,
-      duration: 2000,
-      position: 'bottom'
-    });
+    const toast = await this.toastController.create({ message, duration: 2000, position: 'bottom' });
     toast.present();
   }
 }

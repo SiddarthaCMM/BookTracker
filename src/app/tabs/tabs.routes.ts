@@ -4,7 +4,7 @@ import { authGuard } from '../auth.guard'; // Importa el guard
 
 export const routes: Routes = [
   {
-    path: '', // <--- AQUÍ DEBE IR VACÍO, NO 'tabs'
+    path: '', 
     component: TabsPage,
     children: [
       {
