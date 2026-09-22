@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
+import { Storage } from '@ionic/storage-angular';
 
 export interface Libro {
   id?: string;
@@ -18,8 +19,17 @@ export interface Libro {
 })
 export class LibrosService {
   private apiUrl = 'http://127.0.0.1/api/libros_api.php';
+  private storageReady = false;
+  private STORAGE_KEY = 'libros_cache';
 
-  constructor() {}
+  constructor(private storage: Storage) {
+    this.init();
+  }
+
+  private async init() {
+    await this.storage.create();
+    this.storageReady = true;
+  }
 
   private getAuthHeaders() {
     const token = localStorage.getItem('auth_token');
@@ -27,8 +37,23 @@ export class LibrosService {
   }
 
   async obtenerLibros(): Promise<Libro[]> {
-    const res = await axios.get(this.apiUrl, this.getAuthHeaders());
-    return res.data.data || [];
+    if (!this.storageReady) await this.init();
+
+    try {
+      // 1. Intentamos obtener de la API
+      const res = await axios.get(this.apiUrl, this.getAuthHeaders());
+      const data = res.data.data || [];
+      
+      // 2. Si hay éxito, guardamos en Ionic Storage (Caché)
+      await this.storage.set(this.STORAGE_KEY, data);
+      
+      return data;
+    } catch (error) {
+      console.warn('Error de red. Cargando libros desde almacenamiento local...');
+      // 3. Si falla, leemos de Ionic Storage
+      const localData = await this.storage.get(this.STORAGE_KEY);
+      return localData || [];
+    }
   }
 
   async crearLibro(libro: Libro): Promise<any> {

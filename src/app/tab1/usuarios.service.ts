@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
+import { Storage } from '@ionic/storage-angular';
 
 export interface Usuario {
   id: string;
@@ -13,17 +14,42 @@ export interface Usuario {
 })
 export class UsuariosService {
   private apiUrl = 'http://127.0.0.1/api/usuarios_api.php';
+  private storageReady = false;
+  private STORAGE_KEY = 'usuarios_cache';
 
-  constructor() {}
+  constructor(private storage: Storage) {
+    this.init();
+  }
+
+  // Inicializar Ionic Storage (es obligatorio llamarlo una vez)
+  private async init() {
+    await this.storage.create();
+    this.storageReady = true;
+  }
 
   private getAuthHeaders() {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('auth_token'); // Mantenemos el token para la API
     return { headers: { 'Authorization': `Bearer ${token}` } };
   }
 
   async obtenerUsuarios(): Promise<Usuario[]> {
-    const res = await axios.get(this.apiUrl, this.getAuthHeaders());
-    return res.data.data || [];
+    if (!this.storageReady) await this.init();
+
+    try {
+      // 1. Intentamos obtener de la API
+      const res = await axios.get(this.apiUrl, this.getAuthHeaders());
+      const data = res.data.data || [];
+      
+      // 2. Si hay éxito, guardamos en Ionic Storage (Caché)
+      await this.storage.set(this.STORAGE_KEY, data);
+      
+      return data;
+    } catch (error) {
+      console.warn('Error de red. Cargando usuarios desde almacenamiento local...');
+      // 3. Si falla (sin internet), leemos de Ionic Storage
+      const localData = await this.storage.get(this.STORAGE_KEY);
+      return localData || [];
+    }
   }
 
   async crearUsuario(usuario: Usuario): Promise<any> {

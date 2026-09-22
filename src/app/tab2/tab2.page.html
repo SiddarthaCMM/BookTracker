@@ -30,9 +30,9 @@
             <span class="text-muted">{{ l.autor }}</span>
           </td>
           <td>
-            {{ l.paginas_leidas }} / {{ l.paginas_totales }} págs
+            {{ l.paginas_leidas || 0 }} / {{ l.paginas_totales }} págs
             <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="l.paginas_totales > 0 ? (l.paginas_leidas / l.paginas_totales) * 100 : 0"></div>
+              <div class="progress-fill" [style.width.%]="l.paginas_totales > 0 ? ((l.paginas_leidas || 0) / l.paginas_totales) * 100 : 0"></div>
             </div>
           </td>
           <td>
@@ -46,7 +46,7 @@
             <ion-button fill="clear" size="small" (click)="abrirModalEditar(l)">
               <ion-icon slot="icon-only" name="create-outline" color="primary"></ion-icon>
             </ion-button>
-            <ion-button fill="clear" size="small" (click)="eliminarLibro(l.id)">
+            <ion-button fill="clear" size="small" (click)="l.id && eliminarLibro(l.id)">
               <ion-icon slot="icon-only" name="trash-outline" color="danger"></ion-icon>
             </ion-button>
           </td>

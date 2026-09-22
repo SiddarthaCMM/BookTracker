@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent, ToastController } from '@ionic/angular';
-import { LoginService, UserCredentials } from './login.service'; // Importamos el servicio
+import { LoginService, UserCredentials } from './login.service';
 
 @Component({
   selector: 'app-login',
@@ -18,18 +18,17 @@ export class LoginPage {
   constructor(
     private toastController: ToastController,
     private router: Router,
-    private loginService: LoginService // Inyectamos el servicio
+    private loginService: LoginService
   ) {}
 
   async login(): Promise<void> {
     try {
-      // Usamos el servicio en lugar de Axios
       const response = await this.loginService.login(this.user);
 
-      if (response.success) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('user_id', response.user_id || '');
-        localStorage.setItem('auth_token', response.token || '');
+      if (response.success && response.user_id && response.token) {
+        
+        // Usamos el servicio para guardar la sesión en Preferences
+        await this.loginService.guardarSesion(response.user_id, response.token);
         
         await this.presentToast('Login exitoso');
         this.router.navigateByUrl('/tabs/tab1');

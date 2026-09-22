@@ -1,17 +1,16 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { LoginService } from './login/login.service'; // Ajusta la ruta
 
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = async (route, state) => {
   const router = inject(Router);
+  const loginService = inject(LoginService);
 
-  // Revisamos si el usuario tiene la sesión guardada en el localStorage
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const isLoggedIn = await loginService.estaLogueado();
 
   if (isLoggedIn) {
-    // Si está logueado, lo deja pasar a la vista
     return true;
   } else {
-    // Si no está logueado, lo manda de vuelta al login
     router.navigateByUrl('/login');
     return false;
   }
