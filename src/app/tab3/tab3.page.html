@@ -1,19 +1,43 @@
-<ion-content class="ion-padding"></ion-content>
+<ion-content class="ion-padding">
+  
+  <h2 class="dashboard-title">Dashboard General</h2>
 
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 3
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+  <!-- Indicadores (Cards) -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics.total_users }}</div>
+      <div class="metric-label">Usuarios Totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics.total_books }}</div>
+      <div class="metric-label">Libros Totales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics.reading_books }}</div>
+      <div class="metric-label">Leyendo Ahora</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ metrics.read_books }}</div>
+      <div class="metric-label">Libros Leídos</div>
+    </div>
+  </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 3</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- Contenedores para D3.js (SVG) -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Libros por Estado</h3>
+      <div #statusChart class="d3-chart-container"></div>
+    </div>
+    
+    <div class="chart-card">
+      <h3>Distribución de Calificaciones</h3>
+      <div #ratingChart class="d3-chart-container"></div>
+    </div>
+    
+    <div class="chart-card">
+      <h3>Nuevos Usuarios (Últimos 7 días)</h3>
+      <div #trendChart class="d3-chart-container"></div>
+    </div>
+  </div>
 
-  <app-explore-container name="Tab 3 page"></app-explore-container>
 </ion-content>

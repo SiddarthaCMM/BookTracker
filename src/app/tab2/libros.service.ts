@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
 import { Storage } from '@ionic/storage-angular';
+import { Preferences } from '@capacitor/preferences'; // <--- IMPORTADO
+import { environment } from '../../environments/environment';
 
 export interface Libro {
   id?: string;
@@ -18,7 +20,7 @@ export interface Libro {
   providedIn: 'root'
 })
 export class LibrosService {
-  private apiUrl = 'http://127.0.0.1/api/libros_api.php';
+  private apiUrl = `${environment.apiUrl}libros_api.php`;
   private storageReady = false;
   private STORAGE_KEY = 'libros_cache';
 
@@ -31,43 +33,38 @@ export class LibrosService {
     this.storageReady = true;
   }
 
-  private getAuthHeaders() {
-    const token = localStorage.getItem('auth_token');
-    return { headers: { 'Authorization': `Bearer ${token}` } };
+  private async getAuthHeaders() {
+    const { value } = await Preferences.get({ key: 'auth_token' });
+    return { headers: { 'X-Auth-Token': value || '' } }; // <--- Cambiamos el nombre del header
   }
 
-  async obtenerLibros(): Promise<Libro[]> {
+  async obtenerLibros(): Promise<{ data: Libro[], fromCache: boolean }> {
     if (!this.storageReady) await this.init();
 
     try {
-      // 1. Intentamos obtener de la API
-      const res = await axios.get(this.apiUrl, this.getAuthHeaders());
+      const res = await axios.get(this.apiUrl, await this.getAuthHeaders());
       const data = res.data.data || [];
-      
-      // 2. Si hay éxito, guardamos en Ionic Storage (Caché)
       await this.storage.set(this.STORAGE_KEY, data);
-      
-      return data;
+      return { data, fromCache: false };
     } catch (error) {
       console.warn('Error de red. Cargando libros desde almacenamiento local...');
-      // 3. Si falla, leemos de Ionic Storage
       const localData = await this.storage.get(this.STORAGE_KEY);
-      return localData || [];
+      return { data: localData || [], fromCache: true };
     }
   }
 
   async crearLibro(libro: Libro): Promise<any> {
-    const res = await axios.post(this.apiUrl, libro, this.getAuthHeaders());
+    const res = await axios.post(this.apiUrl, libro, await this.getAuthHeaders()); // <--- AÑADIDO await
     return res.data;
   }
 
   async actualizarLibro(id: string, libro: Libro): Promise<any> {
-    const res = await axios.patch(`${this.apiUrl}?id=${id}`, libro, this.getAuthHeaders());
+    const res = await axios.patch(`${this.apiUrl}?id=${id}`, libro, await this.getAuthHeaders()); // <--- AÑADIDO await
     return res.data;
   }
 
   async eliminarLibro(id: string): Promise<any> {
-    const res = await axios.delete(`${this.apiUrl}?id=${id}`, this.getAuthHeaders());
+    const res = await axios.delete(`${this.apiUrl}?id=${id}`, await this.getAuthHeaders()); // <--- AÑADIDO await
     return res.data;
   }
 }

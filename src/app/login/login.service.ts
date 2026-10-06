@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
-import { Preferences } from '@capacitor/preferences'; 
+import { Preferences } from '@capacitor/preferences';
+import { environment } from '../../environments/environment';
 
 export interface UserCredentials {
   email: string;
@@ -12,13 +13,14 @@ export interface LoginResponse {
   message: string;
   user_id?: string;
   token?: string;
+  role?: string; 
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class LoginService {
-  private apiUrl = 'http://127.0.0.1/api/login.php';
+  private apiUrl = `${environment.apiUrl}login.php`;
 
   constructor() {}
 
@@ -27,22 +29,22 @@ export class LoginService {
     return response.data;
   }
 
-  // Métodos para manejar la persistencia con Capacitor Preferences
-  async guardarSesion(userId: string, token: string) {
+  async guardarSesion(userId: string, token: string, role: string) {
     await Preferences.set({ key: 'isLoggedIn', value: 'true' });
     await Preferences.set({ key: 'user_id', value: userId });
     await Preferences.set({ key: 'auth_token', value: token });
+    await Preferences.set({ key: 'user_role', value: role }); 
   }
 
   async cerrarSesion() {
     await Preferences.remove({ key: 'isLoggedIn' });
     await Preferences.remove({ key: 'user_id' });
     await Preferences.remove({ key: 'auth_token' });
+    await Preferences.remove({ key: 'user_role' }); 
   }
 
-  // Un método rápido para que el Guard verifique si hay sesión
-  async estaLogueado(): Promise<boolean> {
-    const { value } = await Preferences.get({ key: 'isLoggedIn' });
-    return value === 'true';
+  async obtenerRol(): Promise<string | null> {
+    const { value } = await Preferences.get({ key: 'user_role' });
+    return value;
   }
 }

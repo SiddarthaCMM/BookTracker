@@ -1,0 +1,69 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-title>Buscar Libros</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  
+  <ion-searchbar 
+    placeholder="Busca en nuestra base de datos..."
+    [(ngModel)]="query"
+    (ionInput)="buscar($event)"
+    debounce="400">
+  </ion-searchbar>
+
+  <div *ngIf="cargando" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <!-- Lista de Resultados -->
+  <div class="book-list" *ngIf="!cargando">
+    <div class="book-card" *ngFor="let libro of resultados">
+      <img *ngIf="libro.portada_url" [src]="libro.portada_url" alt="Portada" class="book-cover">
+      <ion-icon *ngIf="!libro.portada_url" name="book-outline" class="placeholder-icon"></ion-icon>
+      
+      <div class="book-info">
+        <h3>{{ libro.titulo }}</h3>
+        <p>{{ libro.autor }}</p>
+        <p class="pages" *ngIf="libro.paginas_totales">{{ libro.paginas_totales }} páginas</p>
+      </div>
+
+      <div class="book-actions">
+        <ion-button size="small" fill="clear" (click)="agregarLibro(libro, 'Pendiente')">
+          <ion-icon slot="icon-only" name="add-outline"></ion-icon> Leer
+        </ion-button>
+        <ion-button size="small" fill="clear" color="success" (click)="agregarLibro(libro, 'Leído')">
+          <ion-icon slot="icon-only" name="checkmark-circle-outline"></ion-icon> Leído
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para buscar en Google -->
+  <ion-modal [isOpen]="isModalExternoOpen">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="primary">
+          <ion-title>Búsqueda Externa</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarModal()">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding modal-content">
+        <div class="modal-icon">
+          <ion-icon name="cloud-download-outline"></ion-icon>
+        </div>
+        <h2 class="modal-title">No encontramos "{{ query }}"</h2>
+        <p class="modal-text">¿Deseas buscar en bases de datos externas (Google Books) y agregarlo a tu colección?</p>
+        
+        <ion-button expand="block" (click)="buscarEnGoogle()">
+          <ion-icon slot="start" name="search-outline"></ion-icon>
+          Buscar en Google
+        </ion-button>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+</ion-content>

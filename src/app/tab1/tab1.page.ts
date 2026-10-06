@@ -35,11 +35,18 @@ export class Tab1Page {
 
   async obtenerUsuarios() {
     try {
-      // Usamos el servicio
-      this.usuarios = await this.usuariosService.obtenerUsuarios();
+      // Recibimos los datos y si vinieron de caché
+      const result = await this.usuariosService.obtenerUsuarios();
+      this.usuarios = result.data;
       this.cdr.detectChanges(); 
-    } catch (error) {
-      this.presentToast('Error al cargar usuarios');
+      
+      // Manejo de mensajes al usuario
+      if (result.fromCache) {
+        this.presentToast('Sin conexión: Mostrando usuarios guardados localmente.');
+      }
+    } catch (error: any) {
+      // Si ni siquiera hay caché guardado, mostramos un error real
+      this.presentToast('Error al cargar usuarios y no hay datos guardados.');
     }
   }
 

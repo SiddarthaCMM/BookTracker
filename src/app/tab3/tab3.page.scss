@@ -1,0 +1,56 @@
+ $color-primary: #455a64;
+
+ion-content { --background: #f4f5f8; }
+
+.dashboard-title {
+  color: $color-primary;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.metric-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.metric-value { font-size: 28px; font-weight: 800; color: $color-primary; }
+.metric-label { font-size: 12px; color: #8898aa; text-transform: uppercase; margin-top: 5px; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+
+  h3 {
+    font-size: 16px;
+    color: $color-primary;
+    margin-bottom: 15px;
+  }
+}
+
+/* Importante para D3: Centrar los SVG en el contenedor */
+.d3-chart-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -34,11 +34,15 @@ export class Tab2Page {
 
   async obtenerLibros() {
     try {
-      // Usamos el servicio
-      this.libros = await this.librosService.obtenerLibros();
+      const result = await this.librosService.obtenerLibros();
+      this.libros = result.data;
       this.cdr.detectChanges();
-    } catch (error) {
-      this.presentToast('Error al cargar libros');
+      
+      if (result.fromCache) {
+        this.presentToast('Sin conexión: Mostrando libros guardados localmente.');
+      }
+    } catch (error: any) {
+      this.presentToast('Error al cargar libros, no hay datos guardados.');
     }
   }
 

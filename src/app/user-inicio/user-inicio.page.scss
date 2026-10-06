@@ -1,0 +1,120 @@
+ion-content { --background: #f4f5f8; }
+
+.loading-container {
+  display: flex; 
+  justify-content: center; 
+  padding: 40px;
+}
+
+.book-list { margin-top: 10px; }
+
+/* Tarjeta principal */
+.book-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid #f1f1f1;
+}
+
+/* Portada */
+.book-cover {
+  width: 45px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  flex-shrink: 0; /* Evita que la imagen se encoja */
+}
+
+.placeholder-icon { 
+  font-size: 45px; 
+  color: #ccc; 
+  flex-shrink: 0;
+}
+
+/* Información del libro */
+.book-info {
+  flex: 1;
+  margin-left: 15px;
+  overflow: hidden; /* Importante para truncar el texto */
+  
+  h3 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    color: #2c3e50;
+    font-weight: 600;
+    
+    /* Truncar título a 1 línea */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #7f8c8d;
+    
+    /* Truncar autor a 1 línea */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .pages {
+    color: #bdc3c7;
+    font-size: 11px;
+    margin-top: 2px;
+  }
+}
+
+/* Botones de acción */
+.book-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 10px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Hacer que los botones ocupen menos espacio */
+.book-actions ion-button {
+  --padding-top: 5px;
+  --padding-bottom: 5px;
+  --padding-start: 5px;
+  --padding-end: 5px;
+  font-size: 11px;
+  height: 28px;
+}
+
+/* Estilos del Modal (si lo conservaste) */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.modal-icon {
+  font-size: 80px;
+  color: #455a64;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.modal-text {
+  color: #666;
+  margin-bottom: 30px;
+  padding: 0 20px;
+}

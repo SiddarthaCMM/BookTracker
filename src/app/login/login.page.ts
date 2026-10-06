@@ -25,13 +25,20 @@ export class LoginPage {
     try {
       const response = await this.loginService.login(this.user);
 
-      if (response.success && response.user_id && response.token) {
+      // Verificamos que la respuesta incluya el rol
+      if (response.success && response.user_id && response.token && response.role) {
         
-        // Usamos el servicio para guardar la sesión en Preferences
-        await this.loginService.guardarSesion(response.user_id, response.token);
+        // Guardamos la sesión incluyendo el rol
+        await this.loginService.guardarSesion(response.user_id, response.token, response.role);
         
         await this.presentToast('Login exitoso');
-        this.router.navigateByUrl('/tabs/tab1');
+        
+        // REDIRECCIÓN SEGÚN EL ROL
+        if (response.role === 'admin') {
+          this.router.navigateByUrl('/tabs/tab1'); // Tabs de administrador
+        } else {
+          this.router.navigateByUrl('/user-tabs'); // Tabs de usuario común
+        }
       } else {
         await this.presentToast('Error: ' + response.message);
       }
