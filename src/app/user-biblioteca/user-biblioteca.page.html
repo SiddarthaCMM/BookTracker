@@ -1,13 +1,27 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>user-biblioteca</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-title>Mi Biblioteca</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">user-biblioteca</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding">
+  <ion-list>
+    <ion-item *ngFor="let l of libros">
+      <ion-thumbnail slot="start">
+        <img *ngIf="l.portada_url" [src]="l.portada_url" alt="Portada">
+        <div *ngIf="!l.portada_url" class="no-cover">N/A</div>
+      </ion-thumbnail>
+      <ion-label>
+        <h3>{{ l.titulo }}</h3>
+        <p>{{ l.autor }}</p>
+        <p>Estado: <strong>{{ l.estado }}</strong></p>
+        <p *ngIf="l.paginas_totales > 0">Páginas: {{ l.paginas_leidas || 0 }} / {{ l.paginas_totales }}</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+  <div *ngIf="libros.length === 0" class="empty-state">
+    <p>Tu biblioteca está vacía.</p>
+    <p>Ve a la pestaña "Inicio" para buscar y agregar libros.</p>
+  </div>
 </ion-content>

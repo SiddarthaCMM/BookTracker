@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>Login</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="abrirConfig()">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -12,27 +17,36 @@
       <h5 class="fs-subtitle">Email: admin@test.com</h5>
       <h5 class="fs-subtitle">Contraseña: 123456</h5>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Correo electrónico"
-        [(ngModel)]="user.email"
-        required
-      />
-
-      <input
-        type="password"
-        name="password"
-        placeholder="Contraseña"
-        [(ngModel)]="user.password"
-        required
-      />
-
-      <input
-        type="submit"
-        value="Entrar"
-        class="submit action-button"
-      />
+      <input type="email" name="email" placeholder="Correo electrónico" [(ngModel)]="user.email" required />
+      <input type="password" name="password" placeholder="Contraseña" [(ngModel)]="user.password" required />
+      <input type="submit" value="Entrar" class="submit action-button" />
     </fieldset>
   </form>
 </ion-content>
+
+<!-- Modal de Configuración de IP -->
+<ion-modal [isOpen]="isConfigOpen" (didDismiss)="cerrarConfig()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar color="primary">
+        <ion-title>Configuración</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="cerrarConfig()">Cerrar</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <ion-item lines="full">
+        <ion-input 
+          label="IP del Servidor" 
+          labelPlacement="stacked" 
+          [(ngModel)]="ipInput" 
+          placeholder="Ej: 192.168.1.65">
+        </ion-input>
+      </ion-item>
+      <ion-button expand="block" style="margin-top: 20px;" (click)="guardarIp()">
+        Guardar IP
+      </ion-button>
+    </ion-content>
+  </ng-template>
+</ion-modal>

@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class Tab3Service {
-  private apiUrl = `${environment.apiUrl}dashboard_api.php`;
+  private apiUrl = 'dashboard_api.php';
 
   private async getAuthHeaders() {
     const { value } = await Preferences.get({ key: 'auth_token' });

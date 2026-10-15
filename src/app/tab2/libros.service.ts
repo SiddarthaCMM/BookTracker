@@ -20,7 +20,7 @@ export interface Libro {
   providedIn: 'root'
 })
 export class LibrosService {
-  private apiUrl = `${environment.apiUrl}libros_api.php`;
+  private apiUrl = 'libros_api.php';
   private storageReady = false;
   private STORAGE_KEY = 'libros_cache';
 

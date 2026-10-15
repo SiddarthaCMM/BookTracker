@@ -20,7 +20,7 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class LoginService {
-  private apiUrl = `${environment.apiUrl}login.php`;
+  private apiUrl = 'login.php';
 
   constructor() {}
 

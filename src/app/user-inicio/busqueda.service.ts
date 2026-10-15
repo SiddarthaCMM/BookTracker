@@ -16,7 +16,7 @@ export interface LibroGoogle {
 })
 export class BusquedaService {
   private googleApi = 'https://www.googleapis.com/books/v1/volumes?q=';
-  private apiUrl = `${environment.apiUrl}libros_api.php`;
+  private apiUrl = 'libros_api.php';
 
   private async getAuthHeaders() {
     const { value } = await Preferences.get({ key: 'auth_token' });

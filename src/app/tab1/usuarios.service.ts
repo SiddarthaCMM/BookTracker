@@ -15,7 +15,7 @@ export interface Usuario {
   providedIn: 'root'
 })
 export class UsuariosService {
-  private apiUrl = `${environment.apiUrl}usuarios_api.php`;
+  private apiUrl = 'usuarios_api.php';
   private storageReady = false;
   private STORAGE_KEY = 'usuarios_cache';
 
