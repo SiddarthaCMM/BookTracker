@@ -110,3 +110,79 @@ AC verificados
 AC	Cómo se cumple
 5 intentos incorrectos → 6.º recibe 429 aunque la contraseña sea correcta	login.php cuenta intentos fallidos antes de validar credenciales; al 6.º entra en el bloque 429 sin verificar password.
 Cuenta con is_active = false no inicia sesión y ve mensaje específico	Después de password_verify exitoso, se revisa is_active; si es 0 → 403 con "Tu cuenta está desactivada. Contacta al administrador.".
+
+
+RF-AUT-03 — Recuperar contraseña
+D-AUT-03.1 — Respuesta idéntica para correos existentes e inexistentes
+El endpoint forgot_password.php responde siempre lo mismo:"Si el correo existe, recibirás instrucciones...". Si el correo noexiste o la cuenta está desactivada, NO se genera código, NO se envíacorreo, pero la respuesta es idéntica (mismo status, mismo mensaje).Esto evita enumeración de cuentas.
+
+D-AUT-03.2 — Rate-limit comparte tabla con login
+Se reutilizó login_attempts con event_type = 'forgot_password'.Límite: 3 solicitudes por hora por correo o por IP. Cuando se excede,la respuesta sigue siendo la misma (no se revela el bloqueo), pero nose genera ni envía ningún código nuevo. El código anterior siguesiendo válido hasta su expiración.
+
+D-AUT-03.3 — Código de 6 dígitos + hash SHA-256
+Se optó por código numérico de 6 dígitos (en lugar de token largotipo URL) porque es más fácil de copiar a mano en el móvil. El códigose guarda solo como hash SHA-256 en password_resets.token_hash.Igual que las contraseñas, el código en claro nunca se persiste.
+
+D-AUT-03.4 — Invalidación manual vs DELETE
+Pedir un código nuevo NO borra los anteriores de la tabla; los marcacomo used_at = NOW(). Esto permite:
+
+Auditar intentos de recuperación.
+Que un código previo ya usado devuelva 410 ("ya fue usado") en lugarde "no existe", lo que da más contexto al usuario legítimo.
+D-AUT-03.5 — Revocación de tokens tras cambio de contraseña
+La sección 3 del documento dice "se revocan todos los tokens activosde esa cuenta (cierra sesión en todos los dispositivos)". RF-AUT-05aún no se ha implementado, así que por ahora reset_password.phphace UPDATE users SET token = NULL, token_expires_at = NULL paraese usuario. Cuando llegue RF-AUT-05, se añadiráDELETE FROM auth_tokens WHERE user_id = ? en este mismo endpointy la nulificación de users.token quedará como compatibilidad.
+
+D-AUT-03.6 — D-07 correo saliente — modo DEV
+La sección 0 del documento exige no introducir dependencias sinjustificar. Como el envío real de correo requiere PHPMailer + SMTPconfigurado (fuera del alcance actual), se creó correo_helper.phpcon un flag DEV_MODE = true que:
+
+En DEV: escribe el correo (con el código) enC:\xampp\htdocs\api\dev_correo.log y además devuelve el códigoen la respuesta JSON (dev_code) para que el desarrollador puedaprobar el flujo sin leer el log.
+En PROD (DEV_MODE = false): usaría mail() nativo de PHP (nofiable en XAMPP) o PHPMailer (preferido, comentado en el helper).
+Acción pendiente (D-07): antes de desplegar a producción,configurar SMTP real y poner DEV_MODE = false. Esto se resolveráfuera de las fases de RF-AUT cuando se decida el proveedor de correo.
+
+D-AUT-03.7 — Email del destinatario no viaja en la URL
+La página /reset-password lee ?email= del query param solo siviene desde /forgot-password (lo pasamos nosotros). Pero elcódigo se valida solo por hash, sin necesidad del correo. Esto evitaque alguien manipule la URL para cambiar la contraseña de otracuenta: aunque adivine el email, necesita el código de 6 dígitosque llegó al correo del dueño legítimo.
+
+D-AUT-03.8 — Enlace opcional desde el correo
+Se soporta también aterrizar en /reset-password?code=123456 si elcorreo lleva un enlace con el código precargado. El ngOnInit deResetPasswordPage lo lee y rellena. Como el backend valida solopor hash, el código en URL no expone nada sensible.
+
+Cambios por archivo (RF-AUT-03)
+Archivo	Estado
+backend/migrations/004_password_resets.sql	nuevo (idempotente)
+C:\xampp\htdocs\api\correo_helper.php	nuevo (helper de correo, DEV_MODE)
+C:\xampp\htdocs\api\forgot_password.php	nuevo (Paso 1)
+C:\xampp\htdocs\api\reset_password.php	nuevo (Paso 3)
+src/app/services/auth.models.ts	reemplazado (añade interfaces forgot/reset)
+src/app/services/auth.service.ts	reemplazado (añade solicitarRecuperacion y restablecerContrasena)
+src/app/forgot-password/forgot-password.page.ts	nuevo
+src/app/forgot-password/forgot-password.page.html	nuevo
+src/app/forgot-password/forgot-password.page.scss	nuevo
+src/app/reset-password/reset-password.page.ts	nuevo
+src/app/reset-password/reset-password.page.html	nuevo
+src/app/reset-password/reset-password.page.scss	nuevo
+src/app/app.routes.ts	reemplazado (añade rutas /forgot-password y /reset-password)
+src/app/login/login.page.ts	modificado (método irARecuperar() ahora navega a /forgot-password)
+AC verificados
+AC	Cómo se cumple
+Un código válido cambia la contraseña una sola vez	reset_password.php marca used_at = NOW() tras el cambio. Un segundo intento con el mismo código entra en el bloque if ($reset['used_at'] !== null) → 410.
+Reusar el mismo código devuelve 410	Igual que arriba: el 410 devuelve "El código ya fue usado. Solicita uno nuevo.".
+Tras el cambio, un token anterior responde 401	reset_password.php hace UPDATE users SET token = NULL, token_expires_at = NULL. La próxima petición del cliente viejo llevará un token que ya no existe en BD → el middleware de los demás endpoints responde 401.
+La respuesta del paso 1 es idéntica para correos existentes e inexistentes	forgot_password.php devuelve siempre { success: true, message: "Si el correo existe, recibirás instrucciones..." } sin importar si el usuario existe o está activo. Solo en DEV_MODE añade dev_code (que en producción no se devuelve).
+Orden recomendado para aplicar
+BD → ejecuta 004_password_resets.sql en phpMyAdmin.
+Backend → copia los 3 archivos nuevos en C:\xampp\htdocs\api\:
+correo_helper.php
+forgot_password.php
+reset_password.php
+Frontend modelos/servicio → reemplaza auth.models.ts y auth.service.ts.
+Frontend páginas → crea las carpetas forgot-password/ y reset-password/ con sus 3 archivos cada una.
+Rutas → reemplaza app.routes.ts.
+Login → solo cambia el método irARecuperar() (1 línea).
+Documentación → pega la nueva sección en DECISIONES.md.
+Cómo probar el flujo
+npm start.
+En /login pulsa «¿Olvidaste tu contraseña?» → llega a /forgot-password.
+Escribe un correo que exista en la BD (ej. admin@test.com).
+Recibirás el mensaje genérico. En DEV_MODE, debajo aparece una caja amarilla con el código de 6 dígitos.
+Pulsa «Ya tengo el código» → llega a /reset-password con el email precargado.
+Escribe el código (o se precarga si vienes del enlace del correo) y una nueva contraseña válida.
+Pulsa Cambiar contraseña → mensaje de éxito y botón para volver al login.
+Intenta iniciar sesión con la contraseña vieja → 401. Con la nueva → 200.
+Intenta reusar el mismo código → 410.

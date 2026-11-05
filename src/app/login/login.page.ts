@@ -57,9 +57,9 @@ export class LoginPage {
     this.router.navigateByUrl('/register');
   }
 
-  // RF-AUT-02 (placeholder hasta que se implemente RF-AUT-03)
+  // RF-AUT-03: enlace "¿Olvidaste tu contraseña?" → /forgot-password
   irARecuperar(): void {
-    // TODO: navegar a /forgot-password cuando exista
+    this.router.navigateByUrl('/forgot-password');
   }
 
   async abrirConfig() {

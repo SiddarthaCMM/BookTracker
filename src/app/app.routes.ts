@@ -14,13 +14,23 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./login/login.page').then((m) => m.LoginPage),
   },
-  // ───────────────────────────────────────────────────────────────
-  // RF-AUT-01: registro público, protegido por guestGuard.
-  // ───────────────────────────────────────────────────────────────
   {
     path: 'register',
     canActivate: [guestGuard],
     loadComponent: () => import('./register/register.page').then((m) => m.RegisterPage),
+  },
+  // ───────────────────────────────────────────────────────────────
+  // RF-AUT-03: recuperación de contraseña (2 pantallas públicas)
+  // ───────────────────────────────────────────────────────────────
+  {
+    path: 'forgot-password',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./forgot-password/forgot-password.page').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'reset-password',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./reset-password/reset-password.page').then((m) => m.ResetPasswordPage),
   },
   {
     path: 'tabs',
@@ -33,7 +43,6 @@ export const routes: Routes = [
     loadChildren: () => import('./user-tabs/user-tabs.routes').then((m) => m.routes),
   },
   {
-    // Cualquier ruta desconocida vuelve al login
     path: '**',
     redirectTo: 'login',
   },

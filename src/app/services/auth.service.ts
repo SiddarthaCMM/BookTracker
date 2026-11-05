@@ -8,28 +8,26 @@ import {
   Sesion,
   AuthApiError,
   FieldErrors,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from './auth.models';
 
 /**
- * Servicio de autenticación. RF-AUT-01.
- * - Mantiene la API existente de LoginService para no romper nada.
- * - Añade `register()` que devuelve la misma respuesta que login()
- *   para que el flujo pueda hacer auto-login sin re-preguntar al
- *   usuario recién registrado.
- *
- * Nota: el token se guarda hoy en Preferences (no seguro). Eso se
- * resolverá con RF-AUT-05 (almacenamiento seguro). Por ahora se
- * mantiene la implementación actual para no romper el login.
+ * Servicio de autenticación. RF-AUT-01, RF-AUT-03.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = 'login.php';
   private registerUrl = 'register.php';
+  private forgotUrl = 'forgot_password.php';
+  private resetUrl = 'reset_password.php';
 
   constructor(private storage: Storage) {}
 
   // ---------------------------------------------------------------
-  // LOGIN (heredado del LoginService original — sin cambios)
+  // LOGIN (heredado)
   // ---------------------------------------------------------------
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await axios.post<LoginResponse>(this.apiUrl, { email, password });
@@ -48,6 +46,30 @@ export class AuthService {
     }
   }
 
+  // ---------------------------------------------------------------
+  // RECUPERAR CONTRASEÑA — RF-AUT-03
+  // ---------------------------------------------------------------
+
+  /** Paso 1: solicitar el código de recuperación por correo. */
+  async solicitarRecuperacion(email: string): Promise<ForgotPasswordResponse> {
+    try {
+      const res = await axios.post<ForgotPasswordResponse>(this.forgotUrl, { email } as ForgotPasswordRequest);
+      return res.data;
+    } catch (err: any) {
+      throw this.normalizeError(err);
+    }
+  }
+
+  /** Paso 3: cambiar la contraseña usando el código recibido. */
+  async restablecerContrasena(data: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+    try {
+      const res = await axios.post<ResetPasswordResponse>(this.resetUrl, data);
+      return res.data;
+    } catch (err: any) {
+      throw this.normalizeError(err);
+    }
+  }
+
   /** Convierte el error de axios en un objeto tipado y predecible. */
   private normalizeError(err: any): AuthRequestError {
     const status = err?.response?.status ?? 0;
@@ -59,7 +81,7 @@ export class AuthService {
   }
 
   // ---------------------------------------------------------------
-  // SESIÓN (heredado, sin cambios)
+  // SESIÓN
   // ---------------------------------------------------------------
   async guardarSesion(userId: number, token: string, role: string): Promise<void> {
     await Promise.all([
@@ -99,11 +121,6 @@ export class AuthService {
   }
 }
 
-// ---------------------------------------------------------------
-// Clase de error pública para que los componentes puedan
-// discriminar entre 422 (errores por campo), 409 (duplicado) y
-// 429 (rate-limit).
-// ---------------------------------------------------------------
 export class AuthRequestError extends Error {
   constructor(
     message: string,
@@ -115,13 +132,8 @@ export class AuthRequestError extends Error {
     this.name = 'AuthRequestError';
   }
 
-  get isValidation(): boolean {
-    return this.status === 422;
-  }
-  get isConflict(): boolean {
-    return this.status === 409;
-  }
-  get isRateLimited(): boolean {
-    return this.status === 429;
-  }
+  get isValidation(): boolean { return this.status === 422; }
+  get isConflict(): boolean { return this.status === 409; }
+  get isRateLimited(): boolean { return this.status === 429; }
+  get isGone(): boolean { return this.status === 410; }
 }
