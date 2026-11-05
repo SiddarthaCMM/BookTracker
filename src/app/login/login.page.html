@@ -15,14 +15,54 @@
       <h2 class="fs-title">Iniciar Sesión</h2>
       <h3 class="fs-subtitle">Ingresa tus credenciales</h3>
 
-      <input type="email" name="email" placeholder="Correo electrónico" autocomplete="username" [(ngModel)]="user.email" required />
-      <input type="password" name="password" placeholder="Contraseña" autocomplete="current-password" [(ngModel)]="user.password" required />
-      <input type="submit" value="Entrar" class="submit action-button" />
+      <input
+        type="email"
+        name="email"
+        placeholder="Correo electrónico"
+        autocomplete="username"
+        inputmode="email"
+        autocapitalize="off"
+        spellcheck="false"
+        [(ngModel)]="user.email"
+        required />
+
+      <div class="password-wrap">
+        <input
+          [type]="mostrarPassword ? 'text' : 'password'"
+          name="password"
+          placeholder="Contraseña"
+          autocomplete="current-password"
+          [(ngModel)]="user.password"
+          required />
+        <button
+          type="button"
+          class="toggle-eye"
+          (click)="mostrarPassword = !mostrarPassword"
+          [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+          {{ mostrarPassword ? '🙈' : '👁' }}
+        </button>
+      </div>
+
+      <label class="remember-row">
+        <input type="checkbox" name="remember_me" [(ngModel)]="user.remember_me" />
+        <span>Mantener sesión iniciada</span>
+      </label>
+
+      <input
+        type="submit"
+        value="{{ bloqueoLabel ? bloqueoLabel : (enviando ? 'Entrando…' : 'Entrar') }}"
+        class="submit action-button"
+        [disabled]="enviando || bloqueadoSeg > 0" />
+
+      <div class="links-row">
+        <a (click)="irARegistro()">Crear cuenta</a>
+        <span class="sep">·</span>
+        <a (click)="irARecuperar()">¿Olvidaste tu contraseña?</a>
+      </div>
     </fieldset>
   </form>
 </ion-content>
 
-<!-- Modal de Configuración de IP -->
 <ion-modal [isOpen]="isConfigOpen" (didDismiss)="cerrarConfig()">
   <ng-template>
     <ion-header>
@@ -35,10 +75,10 @@
     </ion-header>
     <ion-content class="ion-padding">
       <ion-item lines="full">
-        <ion-input 
-          label="IP del Servidor" 
-          labelPlacement="stacked" 
-          [(ngModel)]="ipInput" 
+        <ion-input
+          label="IP del Servidor"
+          labelPlacement="stacked"
+          [(ngModel)]="ipInput"
           placeholder="Ej: 192.168.1.65 (vacío = por defecto)">
         </ion-input>
       </ion-item>

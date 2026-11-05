@@ -1,0 +1,7 @@
+{
+  "success": true,
+  "data": [
+    { "id": 1, "titulo": "El Principito", "autor": "Saint-Exupéry", "isbn": "978-123", "paginas_totales": 96, "paginas_leidas": 50, "estado": "Leyendo", "calificacion": 4, "portada_url": "" },
+    { "id": 2, "titulo": "Cien Años de Soledad", "autor": "García Márquez", "isbn": "978-456", "paginas_totales": 400, "paginas_leidas": 400, "estado": "Leído", "calificacion": 5, "portada_url": "" }
+  ]
+}

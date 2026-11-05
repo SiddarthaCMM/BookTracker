@@ -13,7 +13,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",
-    "sync:android": "node scripts/set-env.js && ionic cap sync android"
+    "sync:android": "node scripts/set-env.js && ionic cap sync android",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "e2e": "start-server-and-test start http://localhost:8100 cypress:run"
   },
   "private": true,
   "dependencies": {
@@ -56,6 +59,8 @@
     "@angular/compiler-cli": "22.0.4",
     "@angular/language-service": "22.0.4",
     "@capacitor/cli": "^8.5.0",
+    "@cypress/angular": "^5.0.0",
+    "@cypress/webpack-preprocessor": "^8.0.0",
     "@eslint/js": "^9.16.0",
     "@ionic/angular-toolkit": "^13.0.0",
     "@types/d3": "^7.4.3",
@@ -63,6 +68,8 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "angular-eslint": "22.0.0",
+    "cypress": "^16.2.1",
+    "cypress-file-upload": "^5.0.8",
     "eslint": "^9.16.0",
     "jasmine-core": "~5.1.0",
     "jasmine-spec-reporter": "~5.0.0",
@@ -71,6 +78,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.3.0",
+    "start-server-and-test": "^3.0.13",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.18.0"
   }

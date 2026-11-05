@@ -2,45 +2,57 @@ import { Injectable } from '@angular/core';
 import axios from 'axios';
 import { Preferences } from '@capacitor/preferences';
 import { Storage } from '@ionic/storage-angular';
+import { LoginResponse, UserCredentials } from './login.models';
 
-export interface UserCredentials {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  user_id?: string;
-  token?: string;
-  role?: string;
-}
-
-export interface Sesion {
-  token: string | null;
-  rol: string | null;
-  userId: string | null;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+/**
+ * LoginService — RF-AUT-02
+ * --------------------------------------------------------------
+ * Inicio de sesión robusto. Mantiene la API pública existente
+ * (login / guardarSesion / cerrarSesion / obtenerSesion) y añade
+ * soporte para:
+ *  - remember_me (token de 24h si false, 30 días si true)
+ *  - guardar el momento de expiración del token en Preferences
+ *  - exponer el token y su expiración para el futuro interceptor
+ *    que validará sesiones expiradas (RF-AUT-05)
+ */
+@Injectable({ providedIn: 'root' })
 export class LoginService {
   private apiUrl = 'login.php';
 
   constructor(private storage: Storage) {}
 
   async login(credentials: UserCredentials): Promise<LoginResponse> {
-    const response = await axios.post<LoginResponse>(this.apiUrl, credentials);
+    const response = await axios.post<LoginResponse>(this.apiUrl, {
+      email: credentials.email,
+      password: credentials.password,
+      remember_me: credentials.remember_me ?? false,
+    });
     return response.data;
   }
 
-  async guardarSesion(userId: string, token: string, role: string): Promise<void> {
+  /**
+   * Guarda la sesión y, si viene token_expires_in, calcula y guarda
+   * el timestamp de expiración para que el futuro interceptor de
+   * axios (RF-AUT-05) pueda decidir cuándo cerrar la sesión.
+   */
+  async guardarSesion(
+    userId: string | number,
+    token: string,
+    role: string,
+    expiresIn?: number,
+  ): Promise<void> {
+    const expiresAt = expiresIn
+      ? String(Date.now() + expiresIn * 1000)
+      : null;
+
     await Promise.all([
       Preferences.set({ key: 'isLoggedIn', value: 'true' }),
       Preferences.set({ key: 'user_id', value: String(userId) }),
       Preferences.set({ key: 'auth_token', value: token }),
       Preferences.set({ key: 'user_role', value: role }),
+      ...(expiresAt
+        ? [Preferences.set({ key: 'token_expires_at', value: expiresAt })]
+        : [Preferences.remove({ key: 'token_expires_at' })]),
     ]);
   }
 
@@ -50,8 +62,8 @@ export class LoginService {
       Preferences.remove({ key: 'user_id' }),
       Preferences.remove({ key: 'auth_token' }),
       Preferences.remove({ key: 'user_role' }),
+      Preferences.remove({ key: 'token_expires_at' }),
     ]);
-    // Limpia la caché offline para que otro usuario no vea datos del anterior
     try {
       await this.storage.create();
       await this.storage.clear();
@@ -60,7 +72,7 @@ export class LoginService {
     }
   }
 
-  async obtenerSesion(): Promise<Sesion> {
+  async obtenerSesion() {
     const [token, rol, userId] = await Promise.all([
       Preferences.get({ key: 'auth_token' }),
       Preferences.get({ key: 'user_role' }),

@@ -14,6 +14,14 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./login/login.page').then((m) => m.LoginPage),
   },
+  // ───────────────────────────────────────────────────────────────
+  // RF-AUT-01: registro público, protegido por guestGuard.
+  // ───────────────────────────────────────────────────────────────
+  {
+    path: 'register',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./register/register.page').then((m) => m.RegisterPage),
+  },
   {
     path: 'tabs',
     canActivate: [adminGuard],
@@ -25,7 +33,7 @@ export const routes: Routes = [
     loadChildren: () => import('./user-tabs/user-tabs.routes').then((m) => m.routes),
   },
   {
-    // Cualquier ruta desconocida vuelve al login (los guards redirigen según el rol)
+    // Cualquier ruta desconocida vuelve al login
     path: '**',
     redirectTo: 'login',
   },

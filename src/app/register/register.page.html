@@ -1,0 +1,169 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="volver()" aria-label="Volver">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Crear cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <form id="register-form" (ngSubmit)="registrar()" novalidate>
+
+    <!-- CORREO -->
+    <ion-item lines="full" [class.error-item]="errores['email']">
+      <ion-icon name="mail-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        type="email"
+        label="Correo electrónico"
+        labelPlacement="stacked"
+        inputmode="email"
+        autocomplete="username"
+        [(ngModel)]="form.email"
+        name="email"
+        (ionInput)="validarCampo('email')"
+        placeholder="tucorreo@ejemplo.com">
+      </ion-input>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['email']">
+      <span *ngFor="let m of errores['email']">{{ m }}</span>
+    </div>
+
+    <!-- USUARIO -->
+    <ion-item lines="full" [class.error-item]="errores['username']">
+      <ion-icon name="person-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        type="text"
+        label="Nombre de usuario"
+        labelPlacement="stacked"
+        autocomplete="username"
+        [(ngModel)]="form.username"
+        name="username"
+        (ionInput)="validarCampo('username')"
+        placeholder="3-20 caracteres: letras, números y _">
+      </ion-input>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['username']">
+      <span *ngFor="let m of errores['username']">{{ m }}</span>
+    </div>
+
+    <!-- CONTRASEÑA -->
+    <ion-item lines="full" [class.error-item]="errores['password']">
+      <ion-icon name="lock-closed-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        [type]="mostrarPassword ? 'text' : 'password'"
+        label="Contraseña"
+        labelPlacement="stacked"
+        autocomplete="new-password"
+        [(ngModel)]="form.password"
+        name="password"
+        (ionInput)="validarCampo('password')"
+        placeholder="Mínimo 8, una letra y un número">
+      </ion-input>
+      <ion-button
+        slot="end"
+        fill="clear"
+        type="button"
+        (click)="mostrarPassword = !mostrarPassword"
+        [attr.aria-label]="mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+        <ion-icon slot="icon-only" [name]="mostrarPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+      </ion-button>
+    </ion-item>
+
+    <!-- Medidor de fortaleza (solo informativo) -->
+    <div class="strength" *ngIf="form.password">
+      <div class="strength-bar">
+        <span class="seg" [class.active]="fortaleza !== 'vacia' && fortaleza === 'debil'"
+              [class.seg-debil]="fortaleza === 'debil'"></span>
+        <span class="seg" [class.active]="fortaleza === 'aceptable'"
+              [class.seg-aceptable]="fortaleza === 'aceptable'"></span>
+        <span class="seg" [class.active]="fortaleza === 'fuerte'"
+              [class.seg-fuerte]="fortaleza === 'fuerte'"></span>
+      </div>
+      <span class="strength-label" [class.text-debil]="fortaleza === 'debil'"
+            [class.text-aceptable]="fortaleza === 'aceptable'"
+            [class.text-fuerte]="fortaleza === 'fuerte'">
+        {{ fortalezaLabel }}
+      </span>
+    </div>
+    <div class="field-error" *ngIf="errores['password']">
+      <span *ngFor="let m of errores['password']">{{ m }}</span>
+    </div>
+
+    <!-- CONFIRMAR CONTRASEÑA -->
+    <ion-item lines="full" [class.error-item]="errores['confirm_password']">
+      <ion-icon name="lock-closed-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        [type]="mostrarConfirm ? 'text' : 'password'"
+        label="Confirmar contraseña"
+        labelPlacement="stacked"
+        autocomplete="new-password"
+        [(ngModel)]="form.confirm_password"
+        name="confirm_password"
+        (ionInput)="validarCampo('confirm_password')"
+        placeholder="Repite la contraseña">
+      </ion-input>
+      <ion-button
+        slot="end"
+        fill="clear"
+        type="button"
+        (click)="mostrarConfirm = !mostrarConfirm"
+        [attr.aria-label]="mostrarConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+        <ion-icon slot="icon-only" [name]="mostrarConfirm ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+      </ion-button>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['confirm_password']">
+      <span *ngFor="let m of errores['confirm_password']">{{ m }}</span>
+    </div>
+
+    <!-- FECHA DE NACIMIENTO (opcional) -->
+    <ion-item lines="full" [class.error-item]="errores['birth_date']">
+      <ion-icon name="calendar-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        type="date"
+        label="Fecha de nacimiento (opcional)"
+        labelPlacement="stacked"
+        [(ngModel)]="form.birth_date"
+        name="birth_date"
+        (ionInput)="validarCampo('birth_date')">
+      </ion-input>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['birth_date']">
+      <span *ngFor="let m of errores['birth_date']">{{ m }}</span>
+    </div>
+
+    <!-- TÉRMINOS -->
+    <ion-item lines="none" class="terms-item" [class.error-item]="errores['accept_terms']">
+      <ion-checkbox
+        [(ngModel)]="form.accept_terms"
+        name="accept_terms"
+        labelPlacement="end"
+        justify="start">
+        Acepto los <a href="/legal/terminos" target="_blank" rel="noopener">términos</a> y la
+        <a href="/legal/privacidad" target="_blank" rel="noopener">política de privacidad</a>
+      </ion-checkbox>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['accept_terms']">
+      <span *ngFor="let m of errores['accept_terms']">{{ m }}</span>
+    </div>
+
+    <!-- BOTÓN -->
+    <ion-button
+      type="submit"
+      expand="block"
+      class="submit-btn"
+      [disabled]="!formularioValido">
+      <ion-spinner *ngIf="enviando" name="crescent" slot="start"></ion-spinner>
+      {{ enviando ? 'Creando…' : 'Crear cuenta' }}
+    </ion-button>
+
+    <!-- VUELTA A LOGIN -->
+    <p class="login-link">
+      ¿Ya tienes cuenta? <a (click)="volver()">Iniciar sesión</a>
+    </p>
+
+  </form>
+</ion-content>
