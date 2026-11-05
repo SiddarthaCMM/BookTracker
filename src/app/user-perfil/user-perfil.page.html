@@ -89,6 +89,12 @@
     {{ dispositivoConectado ? 'Desconectar lector' : 'Conectar vía Bluetooth' }}
   </ion-button>
 
+  <!-- RF-AUT-05: acceso a sesiones activas -->
+  <ion-button expand="block" fill="clear" class="save-btn" (click)="irASesiones()">
+    <ion-icon slot="start" name="phone-portrait-outline"></ion-icon>
+    Sesiones activas
+  </ion-button>
+
   <ion-button expand="block" class="save-btn" [disabled]="guardando" (click)="guardar()">
     <ion-icon slot="start" name="save-outline"></ion-icon>
     Guardar Cambios

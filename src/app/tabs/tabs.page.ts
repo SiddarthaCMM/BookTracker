@@ -7,6 +7,7 @@ import { addIcons } from 'ionicons';
 import { peopleOutline, libraryOutline, statsChartOutline, logOutOutline, cloudOfflineOutline } from 'ionicons/icons';
 import { LoginService } from '../login/login.service';
 import { NetworkService } from '../network.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-tabs',
@@ -26,7 +27,8 @@ export class TabsPage implements OnInit {
     private loginService: LoginService,
     private networkService: NetworkService,
     private toastController: ToastController,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {
     addIcons({
       'people-outline': peopleOutline,
@@ -58,7 +60,7 @@ export class TabsPage implements OnInit {
   }
 
   async cerrarSesion() {
-    await this.loginService.cerrarSesion();
+    await this.authService.cerrarSesion();
     this.router.navigateByUrl('/login');
   }
 

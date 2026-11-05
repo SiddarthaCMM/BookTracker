@@ -238,3 +238,70 @@ AC verificados
 AC	Cómo se cumple
 Intentar publicar una reseña con correo sin verificar devuelve 403	Se implementará en RF-LIB-09. El frontend ya muestra el aviso en el perfil; el backend bloqueará la publicación cuando llegue ese requerimiento.
 Tras verificar, la misma acción funciona	verify_email.php marca email_verified_at = NOW(); las futuras peticiones de publicar reseña verán que no es null y permitirán la acción.
+
+RF-AUT-05 — Sesión y almacenamiento seguro del token
+D-AUT-05.1 — Tabla auth_tokens con hash SHA-256
+El token se guarda SOLO como token_hash = SHA-256(token) enauth_tokens. Aunque alguien robe la base de datos, no puedereconstruir ningún token válido (SHA-256 es unilateral).
+
+D-AUT-05.2 — Migración perezosa de users.token → auth_tokens
+Los tokens que ya estaban en users.token (texto plano) NO semigran de golpe. El auth_middleware.php los busca primero enauth_tokens (hash); si no aparecen, busca en users.token(texto plano). Si lo encuentra ahí, lo inserta en auth_tokens(con hash) y limpia users.token. Así los usuarios con sesiónactiva no son desconectados al desplegar RF-AUT-05.
+
+D-AUT-05.3 — Caducidad deslizante con respetando remember_me
+El middleware renueva expires_at en cada uso:
+
+Si quedan < 24h → renueva a 24h.
+Si quedan < 30 días → renueva a 30 días.
+Si quedan más → no toca (evita alargar indefinidamente).Esto combina caducidad deslizante con el límite máximo de 30 días.
+D-AUT-05.4 — Web: token en memoria (no en localStorage)
+En navegador, @capacitor-community/secure-storage usa localStorageen claro (no hay Keychain). Por eso SecureStorageService detectala plataforma web y guarda el token solo en memoria del proceso(memoryToken). El requerimiento RF-AUT-05 acepta esto: "ennavegador, mantenerlo en memoria (se pierde al recargar y se pideiniciar sesión)". En nativo sí usa Keystore/Keychain.
+
+D-AUT-05.5 — Logout llama al servidor antes de limpiar local
+El orden es: POST /logout → borrar SecureStorage → borrar Preferences →limpiar caché Ionic Storage. Si no hay red, se borra local igual yse registra warning. Pendiente (D-08): encolar revocación cuandovuelva la red (tabla pending_revocations). En esta fase no seimplementa para no añadir otra tabla sin necesidad inmediata.
+
+D-AUT-05.6 — authGuard nuevo (RF-AUT-04) reutilizado para /sessions
+La pantalla /sessions está protegida por authGuard (cualquierusuario autenticado, user o admin). No requiere rol específico.
+
+D-AUT-05.7 — device_label desde User-Agent
+Al crear el token, se guarda substr($_SERVER['HTTP_USER_AGENT'], 0, 120)como device_label. Es legible en la pantalla de sesiones("Mozilla/5.0 (Linux; Android 13...)"). En una fase futura sepodría enviar desde el cliente un nombre más amigable("iPhone de Ana"), pero eso requiere un cambio en el cliente;por ahora, el User-Agent es suficiente.
+
+D-AUT-05.8 — Revocación de TODOS los tokens al resetear contraseña
+reset_password.php ahora usa revocar_todos_los_tokens($pdo, $userId)en lugar de NULLear users.token. Esto cierra sesión en todos losdispositivos, como pide el AC de RF-AUT-03.
+
+D-AUT-05.9 — Sesiones activas (P3) implementada
+Se implementó la pantalla opcional /sessions (P3) porque elesfuerzo adicional era mínimo una vez creado sessions_api.php.Lista tokens activos con device_label, last_used_at yexpires_at, y permite revocar cualquiera (excepto la sesiónactual, que se cierra desde el botón de logout del perfil).
+
+Cambios por archivo (RF-AUT-05)
+Backend (PHP)
+Archivo	Estado
+backend/migrations/006_auth_tokens.sql	nuevo (idempotente)
+auth_middleware.php	nuevo (helper validar_token, crear_token_sesion, revocar_todos_los_tokens)
+logout.php	nuevo
+sessions_api.php	nuevo (P3)
+login.php	reemplazado (usa crear_token_sesion)
+register.php	reemplazado (usa crear_token_sesion)
+reset_password.php	reemplazado (usa revocar_todos_los_tokens)
+perfil_api.php	modificado (bloque middleware → validar_token)
+libros_api.php	modificado (bloque middleware → validar_token)
+usuarios_api.php	modificado (bloque middleware → validar_token)
+dashboard_api.php	modificado (bloque middleware → validar_token)
+verify_email.php	modificado (bloque middleware → validar_token)
+resend_verification.php	modificado (bloque middleware → validar_token)
+Frontend (Ionic)
+Archivo	Estado
+package.json	modificado (añade @capacitor-community/secure-storage)
+services/secure-storage.service.ts	nuevo
+services/auth.service.ts	reemplazado (token en SecureStorage, cerrarSesion llama a /logout)
+app.component.ts	reemplazado (interceptor lee token de SecureStorage)
+sessions/sessions.page.ts	nuevo (P3)
+sessions/sessions.page.html	nuevo
+sessions/sessions.page.scss	nuevo
+app.routes.ts	reemplazado (añade /sessions)
+user-perfil/user-perfil.page.ts	modificado (añade irASesiones)
+user-perfil/user-perfil.page.html	modificado (botón «Sesiones activas»)
+tabs/tabs.page.ts	modificado (usa AuthService.cerrarSesion)
+user-tabs/user-tabs.page.ts	modificado (usa AuthService.cerrarSesion)
+AC verificados
+AC	Cómo se cumple
+Un token revocado responde 401	auth_middleware.php revisa revoked_at IS NULL. Si está revocado → 401 con "Token revocado. Inicia sesión de nuevo.".
+Un token caducado responde 401	auth_middleware.php revisa expires_at > NOW(). Si no → 401 con "Tu sesión expiró".
+A partir del contenido de auth_tokens no puede reconstruirse ningún token válido	auth_tokens.token_hash contiene SHA-256(token). SHA-256 es unilateral: no se puede invertir para obtener el token original.

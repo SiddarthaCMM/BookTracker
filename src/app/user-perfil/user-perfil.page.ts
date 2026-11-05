@@ -8,6 +8,7 @@ import {
   IonModal, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonSpinner,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
+import { phonePortraitOutline } from 'ionicons/icons';
 import { cameraOutline, saveOutline, bluetoothOutline, personCircleOutline, mailOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Preferences } from '@capacitor/preferences';
@@ -55,6 +56,7 @@ export class UserPerfilPage {
     private router: Router,              // RF-AUT-04
   ) {
     addIcons({
+      'phone-portrait-outline': phonePortraitOutline,
       'camera-outline': cameraOutline,
       'save-outline': saveOutline,
       'bluetooth-outline': bluetoothOutline,
@@ -70,6 +72,11 @@ export class UserPerfilPage {
 
   ionViewWillLeave() {
     this.cerrarPhotoEditor();
+  }
+
+  // RF-AUT-05 (P3): navegar a sesiones activas
+  irASesiones(): void {
+    this.router.navigateByUrl('/sessions');
   }
 
   async cargarPerfil() {

@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
 import axios from 'axios';
 import { Preferences } from '@capacitor/preferences';
-import { LoginService } from './login/login.service';
+import { AuthService } from './services/auth.service';
 import { buildApiUrl } from './api-config';
 
 @Component({
@@ -15,43 +15,45 @@ import { buildApiUrl } from './api-config';
 })
 export class AppComponent implements OnInit {
   private router = inject(Router);
-  private loginService = inject(LoginService);
+  private authService = inject(AuthService);
 
   constructor() {
-    // Valores síncronos: así ninguna petición sale sin baseURL ni token
     axios.defaults.baseURL = buildApiUrl(null);
     axios.defaults.timeout = 15000;
     this.configurarInterceptores();
   }
 
   async ngOnInit() {
-    // Si el usuario guardó una IP en la pantalla de configuración, la usamos
     const { value: ipGuardada } = await Preferences.get({ key: 'api_ip' });
     axios.defaults.baseURL = buildApiUrl(ipGuardada);
   }
 
   private configurarInterceptores() {
-    // 1. Adjunta el token a TODAS las peticiones a nuestra API (nunca a sitios externos)
+    // 1. Adjunta el token (leído del almacenamiento seguro) a TODAS las
+    //    peticiones a nuestra API (nunca a sitios externos).
     axios.interceptors.request.use(async (config) => {
       const esExterna = /^https?:\/\//i.test(config.url ?? '');
       if (!esExterna) {
-        const { value } = await Preferences.get({ key: 'auth_token' });
-        if (value) {
-          config.headers.set('X-Auth-Token', value);
+        const token = await this.authService.obtenerToken();
+        if (token) {
+          config.headers.set('X-Auth-Token', token);
         }
       }
       return config;
     });
 
-    // 2. Si el servidor responde 401 (token vencido/inválido), cerramos sesión
+    // 2. RF-AUT-06: si el servidor responde 401 (token inválido/expirado),
+    //    limpiamos sesión y redirigimos al login. (Esto ya existía pero
+    //    ahora también limpia el SecureStorage vía AuthService.)
     axios.interceptors.response.use(
       (response) => response,
       async (error) => {
         const url: string = error?.config?.url ?? '';
         const esExterna = /^https?:\/\//i.test(url);
         const esLogin = url.includes('login.php');
-        if (error?.response?.status === 401 && !esExterna && !esLogin) {
-          await this.loginService.cerrarSesion();
+        const esLogout = url.includes('logout.php');
+        if (error?.response?.status === 401 && !esExterna && !esLogin && !esLogout) {
+          await this.authService.cerrarSesion();
           this.router.navigateByUrl('/login');
         }
         return Promise.reject(error);

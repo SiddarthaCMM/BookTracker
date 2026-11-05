@@ -1,0 +1,25 @@
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+ion-item.current {
+  --background: #f0f7ff;
+}
+
+.badge-current {
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+  background: var(--ion-color-primary, #3880ff);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.empty {
+  color: #888;
+  font-style: italic;
+  padding: 20px;
+}

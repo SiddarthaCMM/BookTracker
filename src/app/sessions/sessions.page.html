@@ -1,0 +1,51 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="volver()" aria-label="Volver">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Sesiones activas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+
+  <ion-refresher slot="fixed" (ionRefresh)="cargar($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="loading-wrap" *ngIf="cargando">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <ion-list *ngIf="!cargando">
+    <ion-item *ngFor="let s of sesiones" [class.current]="s.is_current">
+      <ion-icon name="phone-portrait-outline" slot="start" color="medium"></ion-icon>
+      <ion-label>
+        <h3>
+          {{ s.device_label }}
+          <ion-text color="primary" *ngIf="s.is_current" class="badge-current">Este dispositivo</ion-text>
+        </h3>
+        <p>Último uso: {{ s.last_used_at | date:'short' }}</p>
+        <p>Expira: {{ s.expires_at | date:'short' }}</p>
+      </ion-label>
+      <ion-button
+        slot="end"
+        fill="clear"
+        color="danger"
+        *ngIf="!s.is_current"
+        (click)="revocar(s)"
+        aria-label="Cerrar sesión">
+        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+
+    <ion-item *ngIf="sesiones.length === 0" lines="none">
+      <ion-label class="ion-text-center">
+        <p class="empty">No hay otras sesiones activas.</p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+
+</ion-content>
