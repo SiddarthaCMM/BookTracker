@@ -12,10 +12,12 @@ import {
   ForgotPasswordResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  VerifyEmailResponse,
+  ResendVerificationResponse,
 } from './auth.models';
 
 /**
- * Servicio de autenticación. RF-AUT-01, RF-AUT-03.
+ * Servicio de autenticación. RF-AUT-01, RF-AUT-03, RF-AUT-04.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -23,20 +25,16 @@ export class AuthService {
   private registerUrl = 'register.php';
   private forgotUrl = 'forgot_password.php';
   private resetUrl = 'reset_password.php';
+  private verifyUrl = 'verify_email.php';
+  private resendUrl = 'resend_verification.php';
 
   constructor(private storage: Storage) {}
 
-  // ---------------------------------------------------------------
-  // LOGIN (heredado)
-  // ---------------------------------------------------------------
   async login(email: string, password: string): Promise<LoginResponse> {
     const res = await axios.post<LoginResponse>(this.apiUrl, { email, password });
     return res.data;
   }
 
-  // ---------------------------------------------------------------
-  // REGISTRO — RF-AUT-01
-  // ---------------------------------------------------------------
   async register(data: RegisterCredentials): Promise<LoginResponse> {
     try {
       const res = await axios.post<LoginResponse>(this.registerUrl, data);
@@ -46,11 +44,6 @@ export class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------
-  // RECUPERAR CONTRASEÑA — RF-AUT-03
-  // ---------------------------------------------------------------
-
-  /** Paso 1: solicitar el código de recuperación por correo. */
   async solicitarRecuperacion(email: string): Promise<ForgotPasswordResponse> {
     try {
       const res = await axios.post<ForgotPasswordResponse>(this.forgotUrl, { email } as ForgotPasswordRequest);
@@ -60,7 +53,6 @@ export class AuthService {
     }
   }
 
-  /** Paso 3: cambiar la contraseña usando el código recibido. */
   async restablecerContrasena(data: ResetPasswordRequest): Promise<ResetPasswordResponse> {
     try {
       const res = await axios.post<ResetPasswordResponse>(this.resetUrl, data);
@@ -70,7 +62,27 @@ export class AuthService {
     }
   }
 
-  /** Convierte el error de axios en un objeto tipado y predecible. */
+  // ---------------------------------------------------------------
+  // RF-AUT-04 — Verificación de correo
+  // ---------------------------------------------------------------
+  async verifyEmail(code: string): Promise<VerifyEmailResponse> {
+    try {
+      const res = await axios.post<VerifyEmailResponse>(this.verifyUrl, { code });
+      return res.data;
+    } catch (err: any) {
+      throw this.normalizeError(err);
+    }
+  }
+
+  async resendVerification(): Promise<ResendVerificationResponse> {
+    try {
+      const res = await axios.post<ResendVerificationResponse>(this.resendUrl, {});
+      return res.data;
+    } catch (err: any) {
+      throw this.normalizeError(err);
+    }
+  }
+
   private normalizeError(err: any): AuthRequestError {
     const status = err?.response?.status ?? 0;
     const body: AuthApiError = err?.response?.data ?? {
@@ -80,9 +92,6 @@ export class AuthService {
     return new AuthRequestError(body.message ?? 'Error inesperado', status, body.errors ?? {}, body.retry_after);
   }
 
-  // ---------------------------------------------------------------
-  // SESIÓN
-  // ---------------------------------------------------------------
   async guardarSesion(userId: number, token: string, role: string): Promise<void> {
     await Promise.all([
       Preferences.set({ key: 'isLoggedIn', value: 'true' }),

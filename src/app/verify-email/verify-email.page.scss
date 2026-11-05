@@ -1,0 +1,76 @@
+ion-content {
+  --background: #f4f5f8;
+}
+
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+#verify-form, .success-card {
+  width: 420px;
+  max-width: 92%;
+  margin: 30px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  padding: 26px 28px 30px;
+  box-sizing: border-box;
+}
+
+.form-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 8px;
+  font-family: Montserrat, sans-serif;
+}
+
+.form-subtitle {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+ion-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-top: 8px;
+}
+
+ion-item.error-item {
+  --highlight-color-focused: #e53935;
+  --highlight-color: #e53935;
+}
+
+.field-error {
+  color: #d32f2f;
+  font-size: 12px;
+  margin: 4px 4px 8px;
+}
+
+.submit-btn {
+  margin-top: 22px;
+  --border-radius: 8px;
+  font-weight: 600;
+}
+
+.resend-link {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin: 18px 0 0;
+}
+
+.resend-link a {
+  color: #27ae60;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media screen and (max-width: 480px) {
+  #verify-form, .success-card {
+    margin: 14px auto;
+    padding: 18px 18px 22px;
+  }
+}

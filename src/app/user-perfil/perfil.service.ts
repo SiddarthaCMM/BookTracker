@@ -8,6 +8,8 @@ export interface Perfil {
   birth_date: string;
   idioma: string;
   foto_url: string;
+  /** RF-AUT-04: fecha de verificación de correo (null = sin verificar). */
+  email_verified_at: string | null;
 }
 
 @Injectable({
@@ -16,7 +18,6 @@ export interface Perfil {
 export class PerfilService {
   private apiUrl = 'perfil_api.php';
 
-  // El token lo agrega automáticamente el interceptor de axios (app.component.ts)
   async getPerfil(): Promise<Partial<Perfil> | null> {
     const res = await axios.get(this.apiUrl);
     return res.data.data ?? null;

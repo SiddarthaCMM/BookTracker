@@ -1,13 +1,19 @@
 import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon, IonInput, IonItem, IonSelect, IonSelectOption, ToastController, IonModal, IonButtons } from '@ionic/angular';
+import { Router } from '@angular/router';
+import {
+  IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon,
+  IonInput, IonItem, IonSelect, IonSelectOption, ToastController,
+  IonModal, IonButtons, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonSpinner,
+} from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { cameraOutline, saveOutline, bluetoothOutline, personCircleOutline } from 'ionicons/icons';
+import { cameraOutline, saveOutline, bluetoothOutline, personCircleOutline, mailOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Preferences } from '@capacitor/preferences';
 import { PerfilService, Perfil } from './perfil.service';
 import { BluetoothService } from '../services/Bluetooth.service';
+import { AuthService, AuthRequestError } from '../services/auth.service';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EDITOR_CONTAINER_ID = 'pesdk-container';
@@ -17,30 +23,43 @@ const EDITOR_CONTAINER_ID = 'pesdk-container';
   templateUrl: './user-perfil.page.html',
   styleUrls: ['./user-perfil.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon, IonInput, IonItem, IonSelect, IonSelectOption, IonModal, IonButtons],
+  imports: [
+    CommonModule, FormsModule,
+    IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon,
+    IonInput, IonItem, IonSelect, IonSelectOption,
+    IonModal, IonButtons,
+    IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonSpinner,
+  ],
 })
 export class UserPerfilPage {
-  perfil: Perfil = { username: '', nombre: '', email: '', birth_date: '', idioma: 'es', foto_url: '' };
+  perfil: Perfil = {
+    username: '', nombre: '', email: '', birth_date: '',
+    idioma: 'es', foto_url: '', email_verified_at: null,
+  };
   dispositivoConectado: string | null = null;
 
   isEditorOpen = false;
   guardando = false;
+  cargandoVerif = false;  // RF-AUT-04: spinner del botón "Reenviar código"
 
   private imagenParaEditor = '';
   private editorInstance: any = null;
-  private editorToken = 0; // invalida inicializaciones que terminan después de cerrar el modal
+  private editorToken = 0;
 
   constructor(
     private perfilService: PerfilService,
     private toastController: ToastController,
     private cdr: ChangeDetectorRef,
-    private bluetoothService: BluetoothService
+    private bluetoothService: BluetoothService,
+    private authService: AuthService,   // RF-AUT-04
+    private router: Router,              // RF-AUT-04
   ) {
     addIcons({
       'camera-outline': cameraOutline,
       'save-outline': saveOutline,
       'bluetooth-outline': bluetoothOutline,
       'person-circle-outline': personCircleOutline,
+      'mail-outline': mailOutline,
     });
   }
 
@@ -50,14 +69,12 @@ export class UserPerfilPage {
   }
 
   ionViewWillLeave() {
-    // Si se sale de la pantalla con el editor abierto, liberamos sus recursos
     this.cerrarPhotoEditor();
   }
 
   async cargarPerfil() {
     try {
       const data = await this.perfilService.getPerfil();
-      // Mezclamos con los valores por defecto: la API puede devolver null en campos vacíos
       this.perfil = {
         username: data?.username ?? '',
         nombre: data?.nombre ?? '',
@@ -65,6 +82,7 @@ export class UserPerfilPage {
         birth_date: data?.birth_date ?? '',
         idioma: data?.idioma ?? 'es',
         foto_url: data?.foto_url ?? '',
+        email_verified_at: data?.email_verified_at ?? null,  // RF-AUT-04
       };
       this.cdr.markForCheck();
     } catch (error) {
@@ -72,25 +90,54 @@ export class UserPerfilPage {
     }
   }
 
-  // --- FOTO + EDITOR ---
+  // ───────────────────────────────────────────────────────────────
+  // RF-AUT-04: verificación de correo
+  // ───────────────────────────────────────────────────────────────
+
+  /** True si el correo NO está verificado (para mostrar el aviso). */
+  get correoSinVerificar(): boolean {
+    return !this.perfil.email_verified_at;
+  }
+
+  async reenviarCodigo(): Promise<void> {
+    if (this.cargandoVerif) return;
+    this.cargandoVerif = true;
+    this.cdr.markForCheck();
+    try {
+      const resp = await this.authService.resendVerification();
+      await this.presentToast(resp.message);
+    } catch (e: any) {
+      const msg = e instanceof AuthRequestError ? e.message : 'No se pudo enviar el código. Inténtalo más tarde.';
+      await this.presentToast(msg);
+    } finally {
+      this.cargandoVerif = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  irAVerificar(): void {
+    this.router.navigateByUrl('/verify-email');
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // FOTO + EDITOR (sin cambios)
+  // ───────────────────────────────────────────────────────────────
   async tomarFoto() {
     try {
       const photo = await Camera.getPhoto({
         quality: 85,
-        width: 1280, // reduce el tamaño: la foto se guarda en la base de datos como texto
+        width: 1280,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl, // ya incluye el prefijo data:image/...;base64,
+        resultType: CameraResultType.DataUrl,
         source: CameraSource.Prompt,
         correctOrientation: true,
       });
-
       if (!photo.dataUrl) {
         this.presentToast('No se pudo leer la imagen');
         return;
       }
       this.abrirPhotoEditor(photo.dataUrl);
     } catch (error: any) {
-      // Cancelar el selector no es un error; lo demás (permisos, cámara) sí se avisa
       const mensaje = String(error?.message ?? error).toLowerCase();
       if (!mensaje.includes('cancel')) {
         console.error('Error de cámara', error);
@@ -103,22 +150,19 @@ export class UserPerfilPage {
     this.imagenParaEditor = imageDataUrl;
     this.isEditorOpen = true;
     this.cdr.markForCheck();
-    // Cuando el modal termina de abrirse se dispara (didPresent) -> inicializarEditor()
   }
 
   async inicializarEditor() {
     const token = ++this.editorToken;
     try {
-      // El contenedor vive dentro de un ng-template del modal; lo buscamos por id
       const container = await this.esperarContenedor();
+      const [pesdk, react, reactDom] = await Promise.all([
+        import('photoeditorsdk'),
+        import('react'),
+        import('react-dom'),
+      ]);
 
-      // Carga diferida: el SDK pesa varios MB y solo se descarga al abrir el editor.
-      // React y styled-components son dependencias obligatorias de photoeditorsdk.
-      const [pesdk, react, reactDom] = await Promise.all([import('photoeditorsdk'), import('react'), import('react-dom')]);
-
-      if (token !== this.editorToken || !this.isEditorOpen) {
-        return; // el usuario cerró el modal mientras cargaba
-      }
+      if (token !== this.editorToken || !this.isEditorOpen) return;
 
       const w = window as any;
       w.React = w.React || (react as any).default || react;
@@ -129,13 +173,12 @@ export class UserPerfilPage {
       const editor = await PhotoEditorSDKUI.init({
         container,
         image: this.imagenParaEditor,
-        license: '', // sin licencia funciona en modo prueba (con marca de agua)
+        license: '',
         theme: 'dark',
-        // Los recursos (fuentes, filtros, íconos) se copian en angular.json -> assets
         assetBaseUrl: '/assets/photoeditorsdk',
         export: {
           image: {
-            enableDownload: false, // no descargar: devolvemos la imagen a la app
+            enableDownload: false,
             format: ImageFormat.JPEG,
             quality: 0.8,
             exportType: ExportFormat.DATA_URL,
@@ -149,7 +192,6 @@ export class UserPerfilPage {
       }
       this.editorInstance = editor;
 
-      // Se dispara cuando el usuario pulsa "Exportar"/"Guardar" en el editor
       editor.on(UIEvent.EXPORT, (imagen: string) => {
         this.perfil.foto_url = imagen;
         this.presentToast('Foto lista. Pulsa "Guardar cambios" para subirla.');
@@ -165,9 +207,7 @@ export class UserPerfilPage {
   private async esperarContenedor(): Promise<HTMLElement> {
     for (let i = 0; i < 20; i++) {
       const el = document.getElementById(EDITOR_CONTAINER_ID);
-      if (el) {
-        return el;
-      }
+      if (el) return el;
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     throw new Error('El contenedor del editor no está disponible');
@@ -178,7 +218,7 @@ export class UserPerfilPage {
     const editor = this.editorInstance;
     this.editorInstance = null;
     try {
-      editor?.dispose(); // libera memoria y listeners del SDK
+      editor?.dispose();
     } catch (error) {
       console.warn('Error al liberar el editor', error);
     }
@@ -186,11 +226,11 @@ export class UserPerfilPage {
     this.cdr.markForCheck();
   }
 
-  // --- GUARDAR PERFIL ---
+  // ───────────────────────────────────────────────────────────────
+  // GUARDAR PERFIL
+  // ───────────────────────────────────────────────────────────────
   async guardar() {
-    if (this.guardando) {
-      return;
-    }
+    if (this.guardando) return;
     const email = this.perfil.email.trim();
     if (email && !EMAIL_RE.test(email)) {
       this.presentToast('El correo no es válido');
@@ -209,8 +249,8 @@ export class UserPerfilPage {
         username: this.perfil.username.trim(),
         nombre: this.perfil.nombre.trim(),
       });
-      this.presentToast('Perfil actualizado correctamente');
-      await this.cargarPerfil();
+      await this.presentToast('Perfil actualizado correctamente');
+      await this.cargarPerfil();  // recarga para reflejar email_verified_at reseteado si cambió el email
     } catch (error: any) {
       this.presentToast(error.response?.data?.message || 'Error al guardar');
     } finally {
@@ -219,14 +259,15 @@ export class UserPerfilPage {
     }
   }
 
-  // --- BLUETOOTH ---
+  // ───────────────────────────────────────────────────────────────
+  // BLUETOOTH (sin cambios)
+  // ───────────────────────────────────────────────────────────────
   async conectarLector() {
     const listo = await this.bluetoothService.inicializarBluetooth();
     if (!listo) {
       this.presentToast('El Bluetooth no está disponible o no diste permiso');
       return;
     }
-
     let device;
     try {
       device = await this.bluetoothService.solicitarDispositivo();
@@ -234,10 +275,8 @@ export class UserPerfilPage {
       this.presentToast('No se seleccionó ningún dispositivo');
       return;
     }
-
     try {
       await this.bluetoothService.conectar(device, () => {
-        // El lector se apagó o se alejó
         this.dispositivoConectado = null;
         this.cdr.markForCheck();
         this.presentToast('Lector desconectado');

@@ -186,3 +186,55 @@ Escribe el código (o se precarga si vienes del enlace del correo) y una nueva c
 Pulsa Cambiar contraseña → mensaje de éxito y botón para volver al login.
 Intenta iniciar sesión con la contraseña vieja → 401. Con la nueva → 200.
 Intenta reusar el mismo código → 410.
+
+RF-AUT-04 — Verificación de correo
+D-AUT-04.1 — Código de 6 dígitos, hash SHA-256, 24h de validez
+Se reutiliza el mismo patrón de RF-AUT-03 (recuperación decontraseña): código numérico de 6 dígitos, guardado solo como hashSHA-256 en email_verifications. La validez es de 24 horas (no 60min como en recuperación) porque la verificación no es urgente.
+
+D-AUT-04.2 — authGuard nuevo (cualquier rol autenticado)
+Los guards existentes (adminGuard, userGuard, guestGuard) sonexclusivos por rol. /verify-email debe ser accesible paracualquier usuario con sesión iniciada (user o admin). Se creóauth.guard.ts que solo verifica que exista un token (sinimportar el rol).
+
+D-AUT-04.3 — Reset de verificación al cambiar el correo
+perfil_api.php PATCH revisa si el email cambió respecto alalmacenado. Si es así:
+
+Hace UPDATE users SET email = ?, email_verified_at = NULL.
+Invalida códigos anteriores (used_at = NOW()).
+Genera uno nuevo y envía correo.
+El frontend recarga el perfil tras guardar, por lo que el avisode verificación vuelve a aparecer automáticamente.
+D-AUT-04.4 — Rate-limit de reenvío: 3 por hora
+resend_verification.php cuenta cuántos códigos ha solicitado elusuario en la última hora. Si ≥ 3 → 429 sin generar código nuevo.Esto evita spam de correos.
+
+D-AUT-04.5 — Fix incidental: preferred_language → language
+El perfil_api.php original referenciaba preferred_language,columna que no existe en la base de datos (la migración 001 creólanguage). Al actualizar el GET para añadir email_verified_at,también se corrigió preferred_language → language. Estoresuelve la deuda documentada en D-AUT-01.6.
+
+D-AUT-04.6 — Bloqueo de reseñas públicas sin verificar
+El AC menciona que publicar una reseña con correo sin verificardebe devolver 403. Esto se implementará cuando llegue RF-LIB-09(reseñas públicas). El middleware de libros_api.php o el endpointde reseñas verificará email_verified_at antes de permitir lapublicación. Por ahora, el frontend ya muestra el aviso en elperfil, pero no bloquea ninguna acción todavía.
+
+D-AUT-04.7 — Aviso en Perfil, no en todas las pantallas
+Se optó por mostrar el aviso solo en la pantalla de Perfil (nocomo un banner global en todas las páginas). Razones:
+
+Menos intrusivo.
+El usuario que quiere publicar una reseña verá el error 403 conel mensaje «Verifica tu correo para publicar reseñas» y sabrá iral perfil.
+El botón «Reenviar código» está en el aviso, accesible siempre.
+Cambios por archivo (RF-AUT-04)
+Archivo	Estado
+backend/migrations/005_email_verifications.sql	nuevo (idempotente)
+C:\xampp\htdocs\api\verify_email.php	nuevo (POST /auth/verify-email)
+C:\xampp\htdocs\api\resend_verification.php	nuevo (POST reenviar código)
+C:\xampp\htdocs\api\register.php	reemplazado (envía código tras crear usuario)
+C:\xampp\htdocs\api\perfil_api.php	reemplazado (añade email_verified_at al GET, resetea al cambiar email, fix preferred_language→language)
+src/app/auth.guard.ts	nuevo (acepta cualquier rol autenticado)
+src/app/verify-email/verify-email.page.ts	nuevo
+src/app/verify-email/verify-email.page.html	nuevo
+src/app/verify-email/verify-email.page.scss	nuevo
+src/app/services/auth.models.ts	reemplazado (añade VerifyEmailResponse, ResendVerificationResponse)
+src/app/services/auth.service.ts	reemplazado (añade verifyEmail, resendVerification)
+src/app/user-perfil/perfil.service.ts	reemplazado (añade email_verified_at a Perfil)
+src/app/user-perfil/user-perfil.page.ts	reemplazado (añade aviso, reenviarCodigo, irAVerificar)
+src/app/user-perfil/user-perfil.page.html	reemplazado (añade ion-card de aviso)
+src/app/user-perfil/user-perfil.page.scss	modificado (añade estilos del aviso)
+src/app/app.routes.ts	reemplazado (añade ruta /verify-email con authGuard)
+AC verificados
+AC	Cómo se cumple
+Intentar publicar una reseña con correo sin verificar devuelve 403	Se implementará en RF-LIB-09. El frontend ya muestra el aviso en el perfil; el backend bloqueará la publicación cuando llegue ese requerimiento.
+Tras verificar, la misma acción funciona	verify_email.php marca email_verified_at = NOW(); las futuras peticiones de publicar reseña verán que no es null y permitirán la acción.

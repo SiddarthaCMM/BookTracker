@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { adminGuard } from './admin.guard';
 import { userGuard } from './user.guard';
 import { guestGuard } from './guest.guard';
+import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
   {
@@ -19,9 +20,6 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./register/register.page').then((m) => m.RegisterPage),
   },
-  // ───────────────────────────────────────────────────────────────
-  // RF-AUT-03: recuperación de contraseña (2 pantallas públicas)
-  // ───────────────────────────────────────────────────────────────
   {
     path: 'forgot-password',
     canActivate: [guestGuard],
@@ -31,6 +29,15 @@ export const routes: Routes = [
     path: 'reset-password',
     canActivate: [guestGuard],
     loadComponent: () => import('./reset-password/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
+  // ───────────────────────────────────────────────────────────────
+  // RF-AUT-04: verificación de correo (accesible para cualquier
+  // usuario autenticado, sea user o admin).
+  // ───────────────────────────────────────────────────────────────
+  {
+    path: 'verify-email',
+    canActivate: [authGuard],
+    loadComponent: () => import('./verify-email/verify-email.page').then((m) => m.VerifyEmailPage),
   },
   {
     path: 'tabs',

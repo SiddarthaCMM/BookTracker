@@ -5,7 +5,41 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  
+
+  <!-- ───────────────────────────────────────────────────────────────
+       RF-AUT-04: Aviso permanente de "Verifica tu correo"
+       Solo se muestra si email_verified_at es null.
+  ─────────────────────────────────────────────────────────────── -->
+  <ion-card class="verify-notice" *ngIf="correoSinVerificar">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="mail-outline"></ion-icon>
+        Verifica tu correo
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p class="verify-text">
+        Algunas funciones como publicar reseñas requieren correo verificado.
+      </p>
+      <div class="verify-actions">
+        <ion-button
+          size="small"
+          fill="outline"
+          (click)="reenviarCodigo()"
+          [disabled]="cargandoVerif">
+          <ion-spinner *ngIf="cargandoVerif" name="crescent" slot="start"></ion-spinner>
+          Reenviar código
+        </ion-button>
+        <ion-button
+          size="small"
+          (click)="irAVerificar()">
+          Verificar ahora
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Profile header (foto + cámara) -->
   <div class="profile-header">
     <div class="avatar-container" (click)="tomarFoto()">
       <img *ngIf="perfil.foto_url" [src]="perfil.foto_url" class="avatar">
@@ -42,10 +76,15 @@
   </ion-item>
 
   <ion-item lines="full">
-    <ion-input label="Lector Electrónico (E-Reader)" labelPlacement="stacked" [value]="dispositivoConectado || 'No conectado'" readonly></ion-input>
+    <ion-input
+      label="Lector Electrónico (E-Reader)"
+      labelPlacement="stacked"
+      [value]="dispositivoConectado || 'No conectado'"
+      readonly></ion-input>
   </ion-item>
 
-  <ion-button expand="block" fill="outline" class="save-btn" (click)="dispositivoConectado ? desconectarLector() : conectarLector()">
+  <ion-button expand="block" fill="outline" class="save-btn"
+    (click)="dispositivoConectado ? desconectarLector() : conectarLector()">
     <ion-icon slot="start" name="bluetooth-outline"></ion-icon>
     {{ dispositivoConectado ? 'Desconectar lector' : 'Conectar vía Bluetooth' }}
   </ion-button>
@@ -56,7 +95,9 @@
   </ion-button>
 
   <!-- MODAL DEL PHOTOEDITOR SDK -->
-  <ion-modal [isOpen]="isEditorOpen" (didDismiss)="cerrarPhotoEditor()" (didPresent)="inicializarEditor()">
+  <ion-modal [isOpen]="isEditorOpen"
+    (didDismiss)="cerrarPhotoEditor()"
+    (didPresent)="inicializarEditor()">
     <ng-template>
       <ion-header>
         <ion-toolbar color="dark">
@@ -67,8 +108,6 @@
         </ion-toolbar>
       </ion-header>
       <ion-content [fullscreen]="true" [scrollY]="false">
-        <!-- Aquí se inyecta el SDK. Necesita un alto explícito: con height:100% dentro de
-             ion-content medía 0px y el editor no se veía. -->
         <div id="pesdk-container" style="position: absolute; inset: 0;"></div>
       </ion-content>
     </ng-template>

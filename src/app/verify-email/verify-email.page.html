@@ -1,0 +1,70 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="volver()" aria-label="Volver">
+        <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Verificar correo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <form id="verify-form" (ngSubmit)="verificar()" novalidate *ngIf="!exito">
+
+    <h2 class="form-title">Verifica tu correo</h2>
+    <p class="form-subtitle">
+      Escribe el código de 6 dígitos que enviamos a tu correo.
+      El código expira en 24 horas.
+    </p>
+
+    <ion-item lines="full" [class.error-item]="errores['code']">
+      <ion-icon name="key-outline" slot="start" color="medium"></ion-icon>
+      <ion-input
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        label="Código (6 dígitos)"
+        labelPlacement="stacked"
+        [(ngModel)]="code"
+        name="code"
+        (ionInput)="validarCode()"
+        placeholder="000000">
+      </ion-input>
+    </ion-item>
+    <div class="field-error" *ngIf="errores['code']">
+      <span *ngFor="let m of errores['code']">{{ m }}</span>
+    </div>
+
+    <ion-button
+      type="submit"
+      expand="block"
+      class="submit-btn"
+      [disabled]="!puedeVerificar">
+      <ion-spinner *ngIf="enviando" name="crescent" slot="start"></ion-spinner>
+      {{ enviando ? 'Verificando…' : 'Verificar correo' }}
+    </ion-button>
+
+    <p class="resend-link">
+      ¿No recibiste el código? <a (click)="reenviar()">Reenviar</a>
+    </p>
+  </form>
+
+  <!-- Confirmación tras éxito -->
+  <div class="success-card" *ngIf="exito">
+    <h2 class="form-title">¡Correo verificado!</h2>
+    <p class="form-subtitle">
+      Tu correo ha sido verificado correctamente. Ya puedes publicar
+      reseñas y usar todas las funciones de la comunidad.
+    </p>
+    <ion-button
+      type="button"
+      expand="block"
+      class="submit-btn"
+      (click)="irAPerfil()">
+      Volver a mi perfil
+    </ion-button>
+  </div>
+
+</ion-content>
