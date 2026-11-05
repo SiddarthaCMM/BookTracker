@@ -7,10 +7,10 @@
 <ion-content class="ion-padding">
   
   <ion-searchbar 
-    placeholder="Busca en nuestra base de datos..."
+    placeholder="Busca por título, autor o ISBN..."
     [(ngModel)]="query"
     (ionInput)="buscar($event)"
-    debounce="400">
+    [debounce]="400">
   </ion-searchbar>
 
   <div *ngIf="cargando" class="loading-container">
@@ -31,17 +31,17 @@
 
       <div class="book-actions">
         <ion-button size="small" fill="clear" (click)="agregarLibro(libro, 'Pendiente')">
-          <ion-icon slot="icon-only" name="add-outline"></ion-icon> Leer
+          <ion-icon slot="icon-only" name="add-outline"></ion-icon> Por leer
         </ion-button>
         <ion-button size="small" fill="clear" color="success" (click)="agregarLibro(libro, 'Leído')">
-          <ion-icon slot="icon-only" name="checkmark-circle-outline"></ion-icon> Leído
+          <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon> Leído
         </ion-button>
       </div>
     </div>
   </div>
 
   <!-- Modal para buscar en Google -->
-  <ion-modal [isOpen]="isModalExternoOpen">
+  <ion-modal [isOpen]="isModalExternoOpen" (didDismiss)="cerrarModal()">
     <ng-template>
       <ion-header>
         <ion-toolbar color="primary">
@@ -56,11 +56,11 @@
           <ion-icon name="cloud-download-outline"></ion-icon>
         </div>
         <h2 class="modal-title">No encontramos "{{ query }}"</h2>
-        <p class="modal-text">¿Deseas buscar en bases de datos externas (Google Books) y agregarlo a tu colección?</p>
+        <p class="modal-text">¿Deseas buscar en Open Library y agregarlo a tu colección?</p>
         
-        <ion-button expand="block" (click)="buscarEnGoogle()">
+        <ion-button expand="block" (click)="buscarEnExterno()">
           <ion-icon slot="start" name="search-outline"></ion-icon>
-          Buscar en Google
+          Buscar en Open Library
         </ion-button>
       </ion-content>
     </ng-template>

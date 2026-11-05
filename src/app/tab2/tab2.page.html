@@ -46,7 +46,7 @@
             <ion-button fill="clear" size="small" (click)="abrirModalEditar(l)">
               <ion-icon slot="icon-only" name="create-outline" color="primary"></ion-icon>
             </ion-button>
-            <ion-button fill="clear" size="small" (click)="l.id && eliminarLibro(l.id)">
+            <ion-button fill="clear" size="small" (click)="eliminarLibro(l)">
               <ion-icon slot="icon-only" name="trash-outline" color="danger"></ion-icon>
             </ion-button>
           </td>
@@ -82,7 +82,7 @@
         </ion-item>
 
         <ion-item lines="full">
-          <ion-input label="ISBN (Opcional)" labelPlacement="stacked" [(ngModel)]="libroEditando.isbn"></ion-input>
+          <ion-input label="ISBN (opcional)" labelPlacement="stacked" [(ngModel)]="libroEditando.isbn"></ion-input>
         </ion-item>
 
         <ion-item lines="full">
@@ -90,11 +90,11 @@
         </ion-item>
 
         <ion-item lines="full">
-          <ion-input type="number" label="Páginas Totales" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_totales"></ion-input>
+          <ion-input type="number" min="0" label="Páginas Totales" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_totales"></ion-input>
         </ion-item>
 
         <ion-item lines="full" *ngIf="!esNuevo">
-          <ion-input type="number" label="Páginas Leídas" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_leidas"></ion-input>
+          <ion-input type="number" min="0" label="Páginas Leídas" labelPlacement="stacked" [(ngModel)]="libroEditando.paginas_leidas"></ion-input>
         </ion-item>
 
         <ion-item lines="full">
@@ -107,17 +107,17 @@
 
         <ion-item lines="full" *ngIf="!esNuevo">
           <ion-select label="Calificación" labelPlacement="stacked" [(ngModel)]="libroEditando.calificacion">
-            <ion-select-option value="0">Sin calificar</ion-select-option>
-            <ion-select-option value="1">⭐</ion-select-option>
-            <ion-select-option value="2">⭐⭐</ion-select-option>
-            <ion-select-option value="3">⭐⭐⭐</ion-select-option>
-            <ion-select-option value="4">⭐⭐⭐⭐</ion-select-option>
-            <ion-select-option value="5">⭐⭐⭐⭐⭐</ion-select-option>
+            <ion-select-option [value]="0">Sin calificar</ion-select-option>
+            <ion-select-option [value]="1">⭐</ion-select-option>
+            <ion-select-option [value]="2">⭐⭐</ion-select-option>
+            <ion-select-option [value]="3">⭐⭐⭐</ion-select-option>
+            <ion-select-option [value]="4">⭐⭐⭐⭐</ion-select-option>
+            <ion-select-option [value]="5">⭐⭐⭐⭐⭐</ion-select-option>
           </ion-select>
         </ion-item>
 
         <div class="modal-actions">
-          <ion-button expand="block" (click)="guardarLibro()">
+          <ion-button expand="block" [disabled]="guardando" (click)="guardarLibro()">
             {{ esNuevo ? 'Añadir a Estantería' : 'Guardar Cambios' }}
           </ion-button>
         </div>

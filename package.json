@@ -1,8 +1,8 @@
 {
-  "name": "photo-gallery-ng-capacitor",
+  "name": "mi-lector",
   "version": "2.0.0",
-  "author": "Ionic Framework",
-  "homepage": "https://ionicframework.com/docs/angular/your-first-app",
+  "author": "",
+  "homepage": "",
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
@@ -40,10 +40,14 @@
     "@ionic/angular": "^9.0.0",
     "@ionic/pwa-elements": "^3.4.0",
     "@ionic/storage-angular": "^4.0.0",
+    "axios": "^1.7.9",
     "d3": "^7.9.0",
     "ionicons": "^8.1.0",
     "photoeditorsdk": "^5.20.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "rxjs": "~7.8.0",
+    "styled-components": "^6.1.13",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -56,6 +60,8 @@
     "@ionic/angular-toolkit": "^13.0.0",
     "@types/d3": "^7.4.3",
     "@types/jasmine": "~5.1.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "angular-eslint": "22.0.0",
     "eslint": "^9.16.0",
     "jasmine-core": "~5.1.0",

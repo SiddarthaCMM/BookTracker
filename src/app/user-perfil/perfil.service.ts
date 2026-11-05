@@ -1,26 +1,29 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
-import { Preferences } from '@capacitor/preferences';
-import { environment } from '../../environments/environment';
+
+export interface Perfil {
+  username: string;
+  nombre: string;
+  email: string;
+  birth_date: string;
+  idioma: string;
+  foto_url: string;
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PerfilService {
   private apiUrl = 'perfil_api.php';
 
-  private async getAuthHeaders() {
-    const { value } = await Preferences.get({ key: 'auth_token' });
-    return { headers: { 'X-Auth-Token': value || '' } };
+  // El token lo agrega automáticamente el interceptor de axios (app.component.ts)
+  async getPerfil(): Promise<Partial<Perfil> | null> {
+    const res = await axios.get(this.apiUrl);
+    return res.data.data ?? null;
   }
 
-  async getPerfil(): Promise<any> {
-    const res = await axios.get(this.apiUrl, await this.getAuthHeaders());
-    return res.data.data;
-  }
-
-  async actualizarPerfil(data: any): Promise<any> {
-    const res = await axios.patch(this.apiUrl, data, await this.getAuthHeaders());
+  async actualizarPerfil(data: Perfil): Promise<any> {
+    const res = await axios.patch(this.apiUrl, data);
     return res.data;
   }
 }

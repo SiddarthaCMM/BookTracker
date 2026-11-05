@@ -14,7 +14,7 @@
         <ion-icon name="camera-outline"></ion-icon>
       </div>
     </div>
-    <p class="hint">Toma foto y ábrela en el PhotoEditor SDK</p>
+    <p class="hint">Toca la foto para cambiarla y editarla</p>
   </div>
 
   <ion-item lines="full">
@@ -45,12 +45,12 @@
     <ion-input label="Lector Electrónico (E-Reader)" labelPlacement="stacked" [value]="dispositivoConectado || 'No conectado'" readonly></ion-input>
   </ion-item>
 
-  <ion-button expand="block" fill="outline" class="save-btn" (click)="conectarLector()">
+  <ion-button expand="block" fill="outline" class="save-btn" (click)="dispositivoConectado ? desconectarLector() : conectarLector()">
     <ion-icon slot="start" name="bluetooth-outline"></ion-icon>
-    Conectar vía Bluetooth
+    {{ dispositivoConectado ? 'Desconectar lector' : 'Conectar vía Bluetooth' }}
   </ion-button>
 
-  <ion-button expand="block" class="save-btn" (click)="guardar()">
+  <ion-button expand="block" class="save-btn" [disabled]="guardando" (click)="guardar()">
     <ion-icon slot="start" name="save-outline"></ion-icon>
     Guardar Cambios
   </ion-button>
@@ -66,9 +66,10 @@
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
-      <ion-content [fullscreen]="true">
-        <!-- Aquí se inyecta el SDK -->
-        <div #editorContainer style="width: 100%; height: 100%;"></div>
+      <ion-content [fullscreen]="true" [scrollY]="false">
+        <!-- Aquí se inyecta el SDK. Necesita un alto explícito: con height:100% dentro de
+             ion-content medía 0px y el editor no se veía. -->
+        <div id="pesdk-container" style="position: absolute; inset: 0;"></div>
       </ion-content>
     </ng-template>
   </ion-modal>

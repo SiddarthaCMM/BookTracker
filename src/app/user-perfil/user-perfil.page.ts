@@ -1,30 +1,34 @@
-import { Component, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon, IonInput, IonItem, IonSelect, IonSelectOption, ToastController, IonModal, IonButtons } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { cameraOutline, saveOutline, bluetoothOutline, personCircleOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { PerfilService } from './perfil.service';
+import { Preferences } from '@capacitor/preferences';
+import { PerfilService, Perfil } from './perfil.service';
 import { BluetoothService } from '../services/Bluetooth.service';
-// Importamos el SDK de PhotoEditor
-import { PhotoEditorSDKUI } from 'photoeditorsdk';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EDITOR_CONTAINER_ID = 'pesdk-container';
 
 @Component({
   selector: 'app-user-perfil',
   templateUrl: './user-perfil.page.html',
   styleUrls: ['./user-perfil.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon, IonInput, IonItem, IonSelect, IonSelectOption, IonModal, IonButtons]
+  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonTitle, IonButton, IonIcon, IonInput, IonItem, IonSelect, IonSelectOption, IonModal, IonButtons],
 })
 export class UserPerfilPage {
-  @ViewChild('editorContainer') editorContainer!: ElementRef;
-
-  perfil = { username: '', nombre: '', email: '', birth_date: '', idioma: 'es', foto_url: '' };
+  perfil: Perfil = { username: '', nombre: '', email: '', birth_date: '', idioma: 'es', foto_url: '' };
   dispositivoConectado: string | null = null;
 
   isEditorOpen = false;
-  private editorInstance: any;
+  guardando = false;
+
+  private imagenParaEditor = '';
+  private editorInstance: any = null;
+  private editorToken = 0; // invalida inicializaciones que terminan después de cerrar el modal
 
   constructor(
     private perfilService: PerfilService,
@@ -32,83 +36,125 @@ export class UserPerfilPage {
     private cdr: ChangeDetectorRef,
     private bluetoothService: BluetoothService
   ) {
-    // Agrégalo aquí adentro
-    addIcons({ 
-      'camera-outline': cameraOutline, 
+    addIcons({
+      'camera-outline': cameraOutline,
       'save-outline': saveOutline,
       'bluetooth-outline': bluetoothOutline,
-      'person-circle-outline': personCircleOutline // <--- AGREGA ESTA LÍNEA
+      'person-circle-outline': personCircleOutline,
     });
   }
 
-  ionViewWillEnter() { this.cargarPerfil(); }
+  ionViewWillEnter() {
+    this.cargarPerfil();
+    this.dispositivoConectado = this.bluetoothService.dispositivoActual?.name ?? null;
+  }
+
+  ionViewWillLeave() {
+    // Si se sale de la pantalla con el editor abierto, liberamos sus recursos
+    this.cerrarPhotoEditor();
+  }
 
   async cargarPerfil() {
     try {
       const data = await this.perfilService.getPerfil();
-      this.perfil = data;
-      this.cdr.detectChanges(); 
-    } catch (error) { this.presentToast('Error al cargar perfil'); }
-  }
-
-  async tomarFoto() {
-    try {
-      const photo = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: CameraSource.Prompt,
-        correctOrientation: true
-      });
-      
-      const imageBase64 = 'data:image/jpeg;base64,' + photo.base64String;
-      this.abrirPhotoEditor(imageBase64);
-
+      // Mezclamos con los valores por defecto: la API puede devolver null en campos vacíos
+      this.perfil = {
+        username: data?.username ?? '',
+        nombre: data?.nombre ?? '',
+        email: data?.email ?? '',
+        birth_date: data?.birth_date ?? '',
+        idioma: data?.idioma ?? 'es',
+        foto_url: data?.foto_url ?? '',
+      };
+      this.cdr.markForCheck();
     } catch (error) {
-      console.log('Cámara cancelada');
+      this.presentToast('Error al cargar perfil');
     }
   }
 
-  // Variable temporal para guardar la imagen antes de abrir el modal
-  imagenParaEditor: string = '';
+  // --- FOTO + EDITOR ---
+  async tomarFoto() {
+    try {
+      const photo = await Camera.getPhoto({
+        quality: 85,
+        width: 1280, // reduce el tamaño: la foto se guarda en la base de datos como texto
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl, // ya incluye el prefijo data:image/...;base64,
+        source: CameraSource.Prompt,
+        correctOrientation: true,
+      });
 
-  // --- LÓGICA DE PHOTOEDITOR SDK ---
+      if (!photo.dataUrl) {
+        this.presentToast('No se pudo leer la imagen');
+        return;
+      }
+      this.abrirPhotoEditor(photo.dataUrl);
+    } catch (error: any) {
+      // Cancelar el selector no es un error; lo demás (permisos, cámara) sí se avisa
+      const mensaje = String(error?.message ?? error).toLowerCase();
+      if (!mensaje.includes('cancel')) {
+        console.error('Error de cámara', error);
+        this.presentToast('No se pudo abrir la cámara o la galería. Revisa los permisos.');
+      }
+    }
+  }
+
   abrirPhotoEditor(imageDataUrl: string) {
     this.imagenParaEditor = imageDataUrl;
     this.isEditorOpen = true;
-    // El modal se abre, y cuando termine de abrirse, llamará a inicializarEditor()
+    this.cdr.markForCheck();
+    // Cuando el modal termina de abrirse se dispara (didPresent) -> inicializarEditor()
   }
 
   async inicializarEditor() {
+    const token = ++this.editorToken;
     try {
-      // Verificamos que el contenedor ya exista
-      if (!this.editorContainer) {
-        this.presentToast('Error al cargar el contenedor del editor');
-        return;
+      // El contenedor vive dentro de un ng-template del modal; lo buscamos por id
+      const container = await this.esperarContenedor();
+
+      // Carga diferida: el SDK pesa varios MB y solo se descarga al abrir el editor.
+      // React y styled-components son dependencias obligatorias de photoeditorsdk.
+      const [pesdk, react, reactDom] = await Promise.all([import('photoeditorsdk'), import('react'), import('react-dom')]);
+
+      if (token !== this.editorToken || !this.isEditorOpen) {
+        return; // el usuario cerró el modal mientras cargaba
       }
 
-      // Inicializar el SDK de img.ly
-      this.editorInstance = await PhotoEditorSDKUI.init({
-        container: this.editorContainer.nativeElement,
-        image: this.imagenParaEditor, // Usamos la variable temporal
-        license: '', 
+      const w = window as any;
+      w.React = w.React || (react as any).default || react;
+      w.ReactDom = w.ReactDom || (reactDom as any).default || reactDom;
+
+      const { PhotoEditorSDKUI, UIEvent, ImageFormat, ExportFormat } = pesdk as any;
+
+      const editor = await PhotoEditorSDKUI.init({
+        container,
+        image: this.imagenParaEditor,
+        license: '', // sin licencia funciona en modo prueba (con marca de agua)
         theme: 'dark',
-        responsive: true,
-        tools: ['crop', 'filter', 'adjust', 'text', 'brush'] as any,
+        // Los recursos (fuentes, filtros, íconos) se copian en angular.json -> assets
+        assetBaseUrl: '/assets/photoeditorsdk',
         export: {
           image: {
-            format: 'image/jpeg' as any,
-            quality: 0.8
-          }
-        }
-      } as any);
-
-      // Escuchar cuando el usuario exporta la imagen editada
-      this.editorInstance.on('export', (result: any) => {
-        this.perfil.foto_url = result.image;
-        this.cerrarPhotoEditor();
+            enableDownload: false, // no descargar: devolvemos la imagen a la app
+            format: ImageFormat.JPEG,
+            quality: 0.8,
+            exportType: ExportFormat.DATA_URL,
+          },
+        },
       });
 
+      if (token !== this.editorToken || !this.isEditorOpen) {
+        editor.dispose();
+        return;
+      }
+      this.editorInstance = editor;
+
+      // Se dispara cuando el usuario pulsa "Exportar"/"Guardar" en el editor
+      editor.on(UIEvent.EXPORT, (imagen: string) => {
+        this.perfil.foto_url = imagen;
+        this.presentToast('Foto lista. Pulsa "Guardar cambios" para subirla.');
+        setTimeout(() => this.cerrarPhotoEditor());
+      });
     } catch (error) {
       console.error('Error al inicializar PhotoEditor SDK', error);
       this.presentToast('No se pudo abrir el editor de fotos');
@@ -116,37 +162,105 @@ export class UserPerfilPage {
     }
   }
 
+  private async esperarContenedor(): Promise<HTMLElement> {
+    for (let i = 0; i < 20; i++) {
+      const el = document.getElementById(EDITOR_CONTAINER_ID);
+      if (el) {
+        return el;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error('El contenedor del editor no está disponible');
+  }
+
   cerrarPhotoEditor() {
-    if (this.editorInstance) {
-      this.editorInstance.dispose(); // Limpiar el SDK de la memoria
-      this.editorInstance = null;
+    this.editorToken++;
+    const editor = this.editorInstance;
+    this.editorInstance = null;
+    try {
+      editor?.dispose(); // libera memoria y listeners del SDK
+    } catch (error) {
+      console.warn('Error al liberar el editor', error);
     }
     this.isEditorOpen = false;
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
+  // --- GUARDAR PERFIL ---
   async guardar() {
+    if (this.guardando) {
+      return;
+    }
+    const email = this.perfil.email.trim();
+    if (email && !EMAIL_RE.test(email)) {
+      this.presentToast('El correo no es válido');
+      return;
+    }
+    if (!this.perfil.username.trim()) {
+      this.presentToast('El nombre de usuario es obligatorio');
+      return;
+    }
+
+    this.guardando = true;
     try {
-      await this.perfilService.actualizarPerfil(this.perfil);
+      await this.perfilService.actualizarPerfil({
+        ...this.perfil,
+        email,
+        username: this.perfil.username.trim(),
+        nombre: this.perfil.nombre.trim(),
+      });
       this.presentToast('Perfil actualizado correctamente');
-      this.cargarPerfil(); 
-    } catch (error) { this.presentToast('Error al guardar'); }
+      await this.cargarPerfil();
+    } catch (error: any) {
+      this.presentToast(error.response?.data?.message || 'Error al guardar');
+    } finally {
+      this.guardando = false;
+      this.cdr.markForCheck();
+    }
   }
 
-  // --- LÓGICA DE BLUETOOTH ---
+  // --- BLUETOOTH ---
   async conectarLector() {
-    const toast = await this.toastController.create({ message: 'Buscando lectores Bluetooth...', duration: 1500 });
-    await toast.present();
     const listo = await this.bluetoothService.inicializarBluetooth();
-    if (listo) {
-      try {
-        const device = await this.bluetoothService.solicitarDispositivo();
-        if (device && device.name) {
-          this.dispositivoConectado = device.name;
-          this.presentToast(`Conectado a ${device.name}. Sincronizando progreso...`);
-        }
-      } catch (error) { this.presentToast('No se seleccionó ningún dispositivo'); }
-    } else { this.presentToast('El Bluetooth no está disponible'); }
+    if (!listo) {
+      this.presentToast('El Bluetooth no está disponible o no diste permiso');
+      return;
+    }
+
+    let device;
+    try {
+      device = await this.bluetoothService.solicitarDispositivo();
+    } catch (error) {
+      this.presentToast('No se seleccionó ningún dispositivo');
+      return;
+    }
+
+    try {
+      await this.bluetoothService.conectar(device, () => {
+        // El lector se apagó o se alejó
+        this.dispositivoConectado = null;
+        this.cdr.markForCheck();
+        this.presentToast('Lector desconectado');
+      });
+      this.dispositivoConectado = device.name || device.deviceId;
+      await Preferences.set({ key: 'ultimo_lector', value: device.deviceId });
+      this.cdr.markForCheck();
+      this.presentToast(`Conectado a ${this.dispositivoConectado}`);
+    } catch (error) {
+      console.error('No se pudo conectar al lector', error);
+      this.presentToast('No se pudo conectar con el lector. Acércalo e intenta de nuevo.');
+    }
+  }
+
+  async desconectarLector() {
+    try {
+      await this.bluetoothService.desconectar();
+    } catch (error) {
+      console.warn('Error al desconectar', error);
+    }
+    this.dispositivoConectado = null;
+    this.cdr.markForCheck();
+    this.presentToast('Lector desconectado');
   }
 
   async presentToast(message: string) {

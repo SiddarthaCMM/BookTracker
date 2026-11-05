@@ -33,3 +33,9 @@ npm-debug.log*
 
 # Stray Gradle cache (native build artifacts live under android/)
 /.gradle
+
+# Salidas de repomix y archivos del IDE (no deben ir al repositorio)
+repomix-output*.md
+/android/.idea
+/android/.gradle
+/android/local.properties

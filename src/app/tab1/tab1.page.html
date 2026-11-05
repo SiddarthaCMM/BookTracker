@@ -28,7 +28,7 @@
             <ion-button fill="clear" size="small" (click)="abrirModalEditar(u)">
               <ion-icon slot="icon-only" name="create-outline" color="primary"></ion-icon>
             </ion-button>
-            <ion-button fill="clear" size="small" (click)="eliminarUsuario(u.id)">
+            <ion-button fill="clear" size="small" [disabled]="esYo(u)" (click)="eliminarUsuario(u)">
               <ion-icon slot="icon-only" name="trash-outline" color="danger"></ion-icon>
             </ion-button>
           </td>
@@ -68,10 +68,10 @@
         <ion-item lines="full">
           <ion-input 
             type="password" 
-            label="Contraseña" 
+            label="Contraseña"
             labelPlacement="stacked"
             [(ngModel)]="usuarioEditando.password"
-            placeholder="Ingresa una contraseña segura">
+            [placeholder]="esNuevo ? 'Mínimo 6 caracteres' : 'Déjala vacía para no cambiarla'">
           </ion-input>
         </ion-item>
 

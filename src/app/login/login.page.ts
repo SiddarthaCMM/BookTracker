@@ -1,13 +1,14 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonHeader, IonToolbar, IonTitle, IonContent, ToastController, IonButtons, IonButton, IonIcon, IonModal, IonInput, IonItem } from '@ionic/angular';
 import { LoginService, UserCredentials } from './login.service';
 import { Preferences } from '@capacitor/preferences';
-import axios from 'axios'; // Importamos axios para configurarlo globalmente
+import axios from 'axios';
 import { addIcons } from 'ionicons';
 import { settingsOutline } from 'ionicons/icons';
+import { buildApiUrl } from '../api-config';
 
 @Component({
   selector: 'app-login',
@@ -20,64 +21,79 @@ export class LoginPage {
   user: UserCredentials = { email: '', password: '' };
   isConfigOpen = false;
   ipInput = '';
+  private enviando = false;
 
   constructor(
     private toastController: ToastController,
     private router: Router,
-    private loginService: LoginService
+    private loginService: LoginService,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({ 'settings-outline': settingsOutline });
   }
 
   async abrirConfig() {
-    // Leemos la IP guardada, si no hay, ponemos 127.0.0.1 por defecto
+    // Muestra la IP guardada (vacío = usa la de environment)
     const { value } = await Preferences.get({ key: 'api_ip' });
-    this.ipInput = value || '127.0.0.1';
+    this.ipInput = value || '';
     this.isConfigOpen = true;
+    this.cdr.markForCheck(); // la app es zoneless: sin esto el modal no se abre tras el await
   }
 
   cerrarConfig() {
     this.isConfigOpen = false;
+    this.cdr.markForCheck();
   }
 
   async guardarIp() {
-    // Guardamos la nueva IP
-    await Preferences.set({ key: 'api_ip', value: this.ipInput });
-    // Configuramos Axios para usar la nueva IP en todo el app
-    axios.defaults.baseURL = `http://${this.ipInput}/api/`;
+    const ip = this.ipInput.trim();
+    if (ip) {
+      await Preferences.set({ key: 'api_ip', value: ip });
+    } else {
+      await Preferences.remove({ key: 'api_ip' });
+    }
+    axios.defaults.baseURL = buildApiUrl(ip);
     this.cerrarConfig();
-    await this.presentToast('IP actualizada correctamente');
+    await this.presentToast(ip ? 'IP actualizada correctamente' : 'Usando la IP por defecto');
   }
 
   async login(): Promise<void> {
+    if (this.enviando) {
+      return; // evita doble envío
+    }
+    const email = this.user.email.trim();
+    if (!email || !this.user.password) {
+      await this.presentToast('Escribe tu correo y contraseña');
+      return;
+    }
+
+    this.enviando = true;
     try {
-      const response = await this.loginService.login(this.user);
+      const response = await this.loginService.login({ email, password: this.user.password });
 
       if (response.success && response.user_id && response.token && response.role) {
         await this.loginService.guardarSesion(response.user_id, response.token, response.role);
+        this.user.password = '';
         await this.presentToast('Login exitoso');
-        
-        if (response.role === 'admin') {
-          this.router.navigateByUrl('/tabs/tab1');
-        } else {
-          this.router.navigateByUrl('/user-tabs');
-        }
+        this.router.navigateByUrl(response.role === 'admin' ? '/tabs/tab1' : '/user-tabs');
       } else {
-        await this.presentToast('Error: ' + response.message);
+        await this.presentToast('Error: ' + (response.message || 'credenciales inválidas'));
       }
     } catch (error: any) {
       if (error.response?.data?.message) {
         await this.presentToast(error.response.data.message);
+      } else if (error.code === 'ECONNABORTED') {
+        await this.presentToast('El servidor tardó demasiado en responder');
       } else {
         await this.presentToast('Error de conexión con el servidor');
       }
+    } finally {
+      this.enviando = false;
     }
   }
 
   async presentToast(message: string) {
-    const toast = await this.toastController.create({
-      message, duration: 2000, position: 'bottom'
-    });
+    const toast = await this.toastController.create({ message, duration: 2000, position: 'bottom' });
     await toast.present();
   }
 }

@@ -2,19 +2,17 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { LoginService } from './login/login.service';
 
-export const adminGuard: CanActivateFn = async (route, state) => {
+export const adminGuard: CanActivateFn = async () => {
   const router = inject(Router);
   const loginService = inject(LoginService);
 
-  const rol = await loginService.obtenerRol();
+  const { token, rol } = await loginService.obtenerSesion();
 
-  if (rol === 'admin') {
-    return true; // Es admin, deja entrar a los tabs de admin
-  } else if (rol === 'user') {
-    router.navigateByUrl('/user-tabs'); // Es user, mándalo a sus tabs
-    return false;
-  } else {
-    router.navigateByUrl('/login'); // No hay sesión, al login
-    return false;
+  if (!token) {
+    return router.parseUrl('/login'); // Sin sesión
   }
+  if (rol === 'admin') {
+    return true;
+  }
+  return router.parseUrl(rol === 'user' ? '/user-tabs' : '/login');
 };

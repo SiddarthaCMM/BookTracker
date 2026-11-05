@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonButton, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonInput, IonItem, IonIcon, ToastController, AlertController, LoadingController } from '@ionic/angular';
-import { ChangeDetectorRef } from '@angular/core'; 
 import { addIcons } from 'ionicons';
 import { personAdd, createOutline, trashOutline, closeCircle } from 'ionicons/icons';
+import { Preferences } from '@capacitor/preferences';
 import { UsuariosService, Usuario } from './usuarios.service';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PASSWORD_MIN = 6;
 
 @Component({
   selector: 'app-tab1',
@@ -19,49 +22,54 @@ export class Tab1Page {
   isModalOpen = false;
   usuarioEditando: Usuario = { id: '', email: '', password: '' };
   esNuevo = true;
+  private miId = '';
 
   constructor(
     private toastController: ToastController,
     private alertController: AlertController,
     private cdr: ChangeDetectorRef,
     private usuariosService: UsuariosService,
-    private loadingController: LoadingController // <--- INYECTADO AQUÍ
+    private loadingController: LoadingController
   ) {
     addIcons({ 'person-add': personAdd, 'create-outline': createOutline, 'trash-outline': trashOutline, 'close-circle': closeCircle });
   }
 
-  ionViewWillEnter() {
-    this.obtenerUsuarios();
+  async ionViewWillEnter() {
+    const { value } = await Preferences.get({ key: 'user_id' });
+    this.miId = value ?? '';
+    await this.obtenerUsuarios();
   }
 
-  // Función auxiliar para mostrar el Loading
-  async showLoading(message: string) {
-    const loading = await this.loadingController.create({
-      message: message,
-      spinner: 'crescent'
-    });
+  /** El admin no puede borrarse a sí mismo */
+  esYo(u: Usuario): boolean {
+    return String(u.id) === this.miId;
+  }
+
+  /**
+   * Ejecuta una tarea mostrando un loading y lo cierra SIEMPRE (éxito o error).
+   * Antes, tras guardar/eliminar el loading quedaba abierto y la pantalla se congelaba.
+   */
+  private async conLoading<T>(message: string, tarea: () => Promise<T>): Promise<T> {
+    const loading = await this.loadingController.create({ message, spinner: 'crescent' });
     await loading.present();
-    return loading;
+    try {
+      return await tarea();
+    } finally {
+      await loading.dismiss();
+    }
   }
 
   // 1. PETICIÓN GET
   async obtenerUsuarios() {
-    const loading = await this.showLoading('Cargando usuarios...');
     try {
-      const result = await this.usuariosService.obtenerUsuarios();
+      const result = await this.conLoading('Cargando usuarios...', () => this.usuariosService.obtenerUsuarios());
       this.usuarios = result.data;
-      this.cdr.detectChanges(); 
-      
-      // Manejo de errores de red (Caché)
+      this.cdr.markForCheck();
       if (result.fromCache) {
-        this.presentToast('Sin conexión: Mostrando usuarios guardados.');
+        this.presentToast('Sin conexión: mostrando usuarios guardados.');
       }
     } catch (error: any) {
-      // Manejo de errores
-      this.presentToast('Error al cargar y no hay datos guardados.');
-    } finally {
-      // Ocultar loading sin importar qué pase
-      await this.loadingController.dismiss();
+      this.presentToast(error.response?.data?.message || 'Error al cargar usuarios.');
     }
   }
 
@@ -77,63 +85,73 @@ export class Tab1Page {
     this.isModalOpen = true;
   }
 
-  cerrarModal() { this.isModalOpen = false; }
+  cerrarModal() {
+    this.isModalOpen = false;
+  }
 
-  // 2. PETICIÓN POST Y 3. PETICIÓN PATCH
+  // 2. PETICIÓN POST  y  3. PETICIÓN PATCH
   async guardarUsuario() {
-    if (!this.usuarioEditando.email || !this.usuarioEditando.password) {
-      this.presentToast('Email y contraseña son obligatorios');
+    const { email, password } = this.usuarioEditando;
+
+    if (!email || !EMAIL_RE.test(email.trim())) {
+      this.presentToast('Escribe un correo válido');
+      return;
+    }
+    // Al crear la contraseña es obligatoria; al editar solo si se quiere cambiar
+    if (this.esNuevo && !password) {
+      this.presentToast('La contraseña es obligatoria');
+      return;
+    }
+    if (password && password.length < PASSWORD_MIN) {
+      this.presentToast(`La contraseña debe tener al menos ${PASSWORD_MIN} caracteres`);
       return;
     }
 
-    const loading = await this.showLoading(this.esNuevo ? 'Creando usuario...' : 'Actualizando...');
     try {
-      if (this.esNuevo) {
-        // POST
-        await this.usuariosService.crearUsuario(this.usuarioEditando);
-        this.presentToast('Usuario creado correctamente (POST)');
-      } else {
-        // PATCH
-        await this.usuariosService.actualizarUsuario(this.usuarioEditando.id, this.usuarioEditando);
-        this.presentToast('Usuario actualizado correctamente (PATCH)');
-      }
+      await this.conLoading(this.esNuevo ? 'Creando usuario...' : 'Actualizando...', () =>
+        this.esNuevo
+          ? this.usuariosService.crearUsuario(this.usuarioEditando)
+          : this.usuariosService.actualizarUsuario(this.usuarioEditando.id, this.usuarioEditando)
+      );
+      this.presentToast(this.esNuevo ? 'Usuario creado correctamente' : 'Usuario actualizado correctamente');
       this.cerrarModal();
-      this.obtenerUsuarios(); // Vuelve a hacer GET para refrescar la tabla
+      await this.obtenerUsuarios();
     } catch (error: any) {
-      // Manejo de errores del servidor
       this.presentToast(error.response?.data?.message || 'Error en el servidor');
-      await this.loadingController.dismiss();
     }
   }
 
   // 4. PETICIÓN DELETE
-  async eliminarUsuario(id: string) {
+  async eliminarUsuario(u: Usuario) {
+    if (this.esYo(u)) {
+      this.presentToast('No puedes eliminar tu propia cuenta');
+      return;
+    }
     const alert = await this.alertController.create({
       header: 'Confirmar',
-      message: '¿Estás seguro de que deseas eliminar este usuario?',
+      message: `¿Eliminar a ${u.email}?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Eliminar',
+          role: 'destructive',
           handler: async () => {
-            const loading = await this.showLoading('Eliminando...');
             try {
-              await this.usuariosService.eliminarUsuario(id);
-              this.presentToast('Usuario eliminado (DELETE)');
-              this.obtenerUsuarios();
+              await this.conLoading('Eliminando...', () => this.usuariosService.eliminarUsuario(u.id));
+              this.presentToast('Usuario eliminado');
+              await this.obtenerUsuarios();
             } catch (error: any) {
               this.presentToast(error.response?.data?.message || 'Error al eliminar');
-              await this.loadingController.dismiss();
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
 
   async presentToast(message: string) {
     const toast = await this.toastController.create({ message, duration: 2000, position: 'bottom' });
-    toast.present();
+    await toast.present();
   }
 }

@@ -1,21 +1,15 @@
 import { Injectable } from '@angular/core';
 import axios from 'axios';
-import { Preferences } from '@capacitor/preferences';
-import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class Tab3Service {
   private apiUrl = 'dashboard_api.php';
 
-  private async getAuthHeaders() {
-    const { value } = await Preferences.get({ key: 'auth_token' });
-    return { headers: { 'X-Auth-Token': value || '' } };
-  }
-
+  // El token lo agrega automáticamente el interceptor de axios (app.component.ts)
   async getDashboardData(): Promise<any> {
-    const res = await axios.get(this.apiUrl, await this.getAuthHeaders());
+    const res = await axios.get(this.apiUrl);
     return res.data;
   }
 }
