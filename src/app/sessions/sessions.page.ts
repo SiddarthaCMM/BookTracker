@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent,
-  IonList, IonItem, IonLabel, IonButton, IonIcon, IonSpinner,
+  IonList, IonItem, IonLabel, IonButton, IonButtons, IonText, IonIcon, IonSpinner,  // ← añadidos
   IonRefresher, IonRefresherContent, ToastController, AlertController,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
@@ -28,7 +28,8 @@ interface SesionActiva {
   imports: [
     CommonModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
-    IonList, IonItem, IonLabel, IonButton, IonIcon, IonSpinner,
+    IonList, IonItem, IonLabel, IonButton, IonButtons, IonText,  // ← añadidos
+    IonIcon, IonSpinner,
     IonRefresher, IonRefresherContent,
   ],
 })

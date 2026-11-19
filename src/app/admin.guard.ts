@@ -1,15 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { LoginService } from './login/login.service';
+import { AuthService } from './services/auth.service';
 
 export const adminGuard: CanActivateFn = async () => {
   const router = inject(Router);
-  const loginService = inject(LoginService);
+  const authService = inject(AuthService);
 
-  const { token, rol } = await loginService.obtenerSesion();
+  const { token, rol } = await authService.obtenerSesion();
 
   if (!token) {
-    return router.parseUrl('/login'); // Sin sesión
+    return router.parseUrl('/login');
   }
   if (rol === 'admin') {
     return true;

@@ -1,0 +1,86 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Ubicación y captura</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cerrar()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- ====== Sección 1: Geolocalización ====== -->
+  <section class="block">
+    <h2 class="block-title">
+      <ion-icon name="location-outline"></ion-icon>
+      Geolocalización
+    </h2>
+
+    <!-- Botón principal -->
+    <ion-button
+      expand="block"
+      (click)="obtenerUbicacion()"
+      [disabled]="cargando">
+      <ion-spinner *ngIf="cargando" name="crescent" slot="start"></ion-spinner>
+      <ion-icon *ngIf="!cargando" name="navigate-outline" slot="start"></ion-icon>
+      {{ cargando ? 'Obteniendo ubicación…' : 'Obtener mi ubicación' }}
+    </ion-button>
+
+    <!-- Coordenadas obtenidas -->
+    <div class="coords-card" *ngIf="lat !== null && lng !== null">
+      <div class="coord-row">
+        <span class="label">Latitud:</span>
+        <span class="value">{{ lat.toFixed(6) }}°</span>
+      </div>
+      <div class="coord-row">
+        <span class="label">Longitud:</span>
+        <span class="value">{{ lng.toFixed(6) }}°</span>
+      </div>
+      <div class="coord-row" *ngIf="precision !== null">
+        <span class="label">Precisión:</span>
+        <span class="value">±{{ precision.toFixed(0) }} m</span>
+      </div>
+      <div class="coord-row" *ngIf="timestamp">
+        <span class="label">Obtenida:</span>
+        <span class="value">{{ timestamp | date:'short' }}</span>
+      </div>
+
+      <a [href]="mapsLink" target="_blank" rel="noopener" class="maps-link">
+        Ver en Google Maps →
+      </a>
+    </div>
+
+    <!-- Funcionalidad basada en ubicación: sede más cercana -->
+    <div class="nearest-card" *ngIf="sedeMasCercana">
+      <h3 class="nearest-title">
+        <ion-icon name="navigate-outline"></ion-icon>
+        Sede Mi Lector más cercana
+      </h3>
+      <p class="nearest-name">{{ sedeMasCercana.nombre }}</p>
+      <p class="nearest-addr">{{ sedeMasCercana.direccion }}</p>
+      <p class="nearest-dist">A {{ sedeMasCercana.distanciaKm }} km de tu ubicación</p>
+    </div>
+
+    <!-- Manejo de errores -->
+    <div class="error-card" *ngIf="permisoDenegado || errorMensaje">
+      <h3 class="error-title">
+        <ion-icon name="close-outline"></ion-icon>
+        {{ permisoDenegado ? 'Permiso denegado' : 'Error' }}
+      </h3>
+      <p class="error-msg">{{ errorMensaje }}</p>
+      <ion-button
+        size="small"
+        fill="outline"
+        (click)="obtenerUbicacion()"
+        *ngIf="permisoDenegado">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        Reintentar
+      </ion-button>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+</ion-content>

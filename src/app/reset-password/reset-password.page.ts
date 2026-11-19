@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent,
-  IonItem, IonInput, IonIcon, IonButton, IonSpinner, ToastController,
+  IonItem, IonInput, IonIcon, IonButton, IonButtons, IonSpinner, ToastController,  // ← IonButtons añadido
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { lockClosedOutline, arrowBackOutline, keyOutline } from 'ionicons/icons';
@@ -19,7 +19,7 @@ import { FieldErrors } from '../services/auth.models';
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
-    IonItem, IonInput, IonIcon, IonButton, IonSpinner,
+    IonItem, IonInput, IonIcon, IonButton, IonButtons, IonSpinner,  // ← IonButtons añadido
   ],
 })
 export class ResetPasswordPage implements OnInit {

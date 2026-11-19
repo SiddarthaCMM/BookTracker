@@ -158,3 +158,24 @@ ion-content {
   cursor: pointer;
   font-weight: 600;
 }
+
+/* Enlace de geolocalización al final del form */
+.geo-link {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+}
+
+.geo-link ion-icon {
+  vertical-align: middle;
+  margin-right: 4px;
+  color: var(--ion-color-primary, #3880ff);
+}
+
+.geo-link a {
+  color: var(--ion-color-primary, #3880ff);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 600;
+}

@@ -1,0 +1,165 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+ion-content {
+  --background: #f4f5f8;
+  height: 100%;
+}
+
+ion-content {
+  --background: #f4f5f8;
+}
+
+.block {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.block-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 14px;
+}
+
+.block-title ion-icon {
+  font-size: 20px;
+  color: var(--ion-color-primary, #3880ff);
+}
+
+/* --- Coordenadas --- */
+.coords-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--ion-color-primary, #3880ff);
+}
+
+.coord-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.coord-row .label {
+  color: #666;
+  font-weight: 500;
+}
+
+.coord-row .value {
+  color: #2c3e50;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+.maps-link {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ion-color-primary, #3880ff);
+  text-decoration: underline;
+  text-align: right;
+}
+
+/* --- Sede más cercana --- */
+.nearest-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #f0fff4;
+  border-radius: 8px;
+  border-left: 4px solid #27ae60;
+}
+
+.nearest-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #27ae60;
+  margin: 0 0 8px;
+}
+
+.nearest-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 2px;
+}
+
+.nearest-addr {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 6px;
+}
+
+.nearest-dist {
+  font-size: 14px;
+  color: #27ae60;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* --- Errores --- */
+.error-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: #fff5f5;
+  border-radius: 8px;
+  border-left: 4px solid #e74c3c;
+}
+
+.error-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e74c3c;
+  margin: 0 0 6px;
+}
+
+.error-msg {
+  font-size: 13px;
+  color: #7f1d1d;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+/* --- Divider --- */
+.divider {
+  border: 0;
+  border-top: 1px solid #e0e0e0;
+  margin: 8px 0 16px;
+}
+
+/* --- Cámara --- */
+.capture-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.preview {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.preview img,
+.preview video {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}

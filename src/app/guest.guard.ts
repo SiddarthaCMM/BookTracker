@@ -1,13 +1,12 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { LoginService } from './login/login.service';
+import { AuthService } from './services/auth.service';
 
-/** Si ya hay sesión iniciada, salta el login y manda a cada rol a su pantalla. */
 export const guestGuard: CanActivateFn = async () => {
   const router = inject(Router);
-  const loginService = inject(LoginService);
+  const authService = inject(AuthService);
 
-  const { token, rol } = await loginService.obtenerSesion();
+  const { token, rol } = await authService.obtenerSesion();
 
   if (token && rol === 'admin') {
     return router.parseUrl('/tabs');

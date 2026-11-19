@@ -4,15 +4,17 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent, ToastController,
-  IonButtons, IonButton, IonIcon, IonModal, IonInput, IonItem, IonCheckbox,
+  IonButtons, IonButton, IonIcon, IonModal, IonInput, IonItem,
 } from '@ionic/angular';
 import { LoginService } from './login.service';
 import { UserCredentials } from './login.models';
+import { AuthService } from '../services/auth.service';
 import { Preferences } from '@capacitor/preferences';
 import axios from 'axios';
 import { addIcons } from 'ionicons';
-import { settingsOutline } from 'ionicons/icons';
+import { settingsOutline, locationOutline } from 'ionicons/icons';
 import { buildApiUrl } from '../api-config';
+import { GeolocationModalPage } from '../geolocation-modal/geolocation-modal.page';
 
 @Component({
   selector: 'app-login',
@@ -22,7 +24,8 @@ import { buildApiUrl } from '../api-config';
   imports: [
     CommonModule, FormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
-    IonButtons, IonButton, IonIcon, IonModal, IonInput, IonItem, IonCheckbox,
+    IonButtons, IonButton, IonIcon, IonModal, IonInput, IonItem,
+    GeolocationModalPage, 
   ],
 })
 export class LoginPage {
@@ -37,7 +40,10 @@ export class LoginPage {
   mostrarPassword = false;
   enviando = false;
 
-  // Cuenta regresiva de bloqueo (429)
+  // Modal de geolocalización
+  isGeoOpen = false;
+  geoComponent = GeolocationModalPage;
+
   bloqueadoSeg = 0;
   private bloqueoTimer: any = null;
 
@@ -45,19 +51,32 @@ export class LoginPage {
     private toastController: ToastController,
     private router: Router,
     private loginService: LoginService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {
-    addIcons({ 'settings-outline': settingsOutline });
+    addIcons({ 'settings-outline': settingsOutline, 'location-outline': locationOutline });
   }
 
-  // ───────────────────────────────────────────────────────────────
-  // RF-AUT-01: enlace "Crear cuenta"
-  // ───────────────────────────────────────────────────────────────
+  // ---------------------------------------------------------------
+  // Modal de geolocalización
+  // ---------------------------------------------------------------
+  abrirGeoModal(): void {
+    this.isGeoOpen = true;
+    this.cdr.markForCheck();
+  }
+
+  cerrarGeoModal(): void {
+    this.isGeoOpen = false;
+    this.cdr.markForCheck();
+  }
+
+  // ---------------------------------------------------------------
+  // Enlaces de autenticación
+  // ---------------------------------------------------------------
   irARegistro(): void {
     this.router.navigateByUrl('/register');
   }
 
-  // RF-AUT-03: enlace "¿Olvidaste tu contraseña?" → /forgot-password
   irARecuperar(): void {
     this.router.navigateByUrl('/forgot-password');
   }
@@ -86,12 +105,12 @@ export class LoginPage {
     await this.presentToast(ip ? 'IP actualizada correctamente' : 'Usando la IP por defecto');
   }
 
-  // ───────────────────────────────────────────────────────────────
-  // RF-AUT-02: submit
-  // ───────────────────────────────────────────────────────────────
+  // ---------------------------------------------------------------
+  // Login
+  // ---------------------------------------------------------------
   async login(): Promise<void> {
     if (this.enviando) return;
-    if (this.bloqueadoSeg > 0) return; // aún bloqueado
+    if (this.bloqueadoSeg > 0) return;
 
     const email = this.user.email.trim().toLowerCase();
     if (!email || !this.user.password) {
@@ -110,11 +129,10 @@ export class LoginPage {
       });
 
       if (response.success && response.user_id && response.token && response.role) {
-        await this.loginService.guardarSesion(
+        await this.authService.guardarSesion(
           response.user_id,
           response.token,
           response.role,
-          response.token_expires_in,
         );
         this.user.password = '';
         await this.presentToast('Login exitoso');
@@ -130,15 +148,11 @@ export class LoginPage {
     }
   }
 
-  // ───────────────────────────────────────────────────────────────
-  // RF-AUT-02: manejo de errores diferenciado
-  // ───────────────────────────────────────────────────────────────
   private async manejarErrorLogin(error: any): Promise<void> {
     const status = error?.response?.status;
     const data = error?.response?.data;
 
     if (status === 429) {
-      // Bloqueo por rate-limit: arranca cuenta regresiva
       const retry = data?.retry_after ?? 900;
       this.iniciarCuentaRegresiva(retry);
       await this.presentToast(data?.message || 'Demasiados intentos. Intenta más tarde.');
@@ -146,13 +160,11 @@ export class LoginPage {
     }
 
     if (status === 403) {
-      // Cuenta desactivada
       await this.presentToast(data?.message || 'Tu cuenta está desactivada. Contacta al administrador.');
       return;
     }
 
     if (status === 401 || status === 404) {
-      // Credenciales inválidas (mensaje genérico del servidor, no revela cuál falló)
       const msg = data?.message || 'Correo o contraseña incorrectos';
       const restantes = data?.attempts_remaining;
       const toast = restantes !== undefined && restantes <= 2
@@ -168,7 +180,6 @@ export class LoginPage {
     }
 
     if (!error?.response) {
-      // Sin respuesta del servidor
       await this.presentToast('No se pudo conectar con el servidor');
       return;
     }
@@ -176,9 +187,6 @@ export class LoginPage {
     await this.presentToast(data?.message || 'Error de conexión con el servidor');
   }
 
-  // ───────────────────────────────────────────────────────────────
-  // Cuenta regresiva del bloqueo
-  // ───────────────────────────────────────────────────────────────
   private iniciarCuentaRegresiva(segundos: number): void {
     if (this.bloqueoTimer) {
       clearInterval(this.bloqueoTimer);
@@ -198,7 +206,6 @@ export class LoginPage {
     }, 1000);
   }
 
-  /** Texto legible del bloqueo para mostrar en el botón. */
   get bloqueoLabel(): string {
     if (this.bloqueadoSeg <= 0) return '';
     const m = Math.floor(this.bloqueadoSeg / 60);
@@ -206,9 +213,6 @@ export class LoginPage {
     return `Espera ${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  // ───────────────────────────────────────────────────────────────
-  // Redirección por rol (async — lee URL pendiente del storage)
-  // ───────────────────────────────────────────────────────────────
   private async redirigirPorRol(role: string): Promise<void> {
     const urlPendiente = await this.leerUrlPendiente();
     const destinoAdmin = urlPendiente && urlPendiente.startsWith('/tabs/')
@@ -223,7 +227,6 @@ export class LoginPage {
     this.router.navigateByUrl(destino);
   }
 
-  // Persistencia simple de URL pendiente para volver tras login
   private async guardarUrlPendiente(url: string): Promise<void> {
     await Preferences.set({ key: 'pending_url', value: url });
   }
